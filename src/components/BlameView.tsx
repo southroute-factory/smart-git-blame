@@ -16,6 +16,15 @@ export interface BlameLine {
 }
 
 /**
+ * Merge context response for determining if a commit is a direct commit
+ */
+interface MergeContextResponse {
+  sha: string;
+  isDirectCommit: boolean;
+  isMergeCommit: boolean;
+}
+
+/**
  * API response format for blame data
  */
 export interface BlameResponse {
@@ -105,6 +114,8 @@ export default function BlameView({ repo, file, onLineClick }: BlameViewProps) {
   const [highlightResult, setHighlightResult] = useState<HighlightResult | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  // Track which commits are direct commits (not part of a merge)
+  const [directCommits, setDirectCommits] = useState<Set<string>>(new Set());
 
   // Fetch blame data from API
   useEffect(() => {
@@ -128,6 +139,30 @@ export default function BlameView({ repo, file, onLineClick }: BlameViewProps) {
         const code = data.lines.map((line) => line.content).join('\n');
         const highlighted = await highlightCode(code, { filename: file });
         setHighlightResult(highlighted);
+
+        // Fetch merge context for unique commits to identify direct commits
+        const uniqueShas = [...new Set(data.lines.map((line) => line.sha))];
+        const directCommitSet = new Set<string>();
+        
+        // Fetch merge context for each unique commit in parallel
+        await Promise.all(
+          uniqueShas.map(async (sha) => {
+            try {
+              const params = new URLSearchParams({ repo, sha });
+              const response = await fetch(`/api/merge?${params.toString()}`);
+              if (response.ok) {
+                const mergeContext: MergeContextResponse = await response.json();
+                if (mergeContext.isDirectCommit) {
+                  directCommitSet.add(sha);
+                }
+              }
+            } catch {
+              // Silently ignore merge context fetch failures for individual commits
+            }
+          })
+        );
+        
+        setDirectCommits(directCommitSet);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'An unexpected error occurred');
       } finally {
@@ -187,6 +222,7 @@ export default function BlameView({ repo, file, onLineClick }: BlameViewProps) {
       >
         <thead className="sr-only">
           <tr>
+            <th scope="col">Type</th>
             <th scope="col">Commit</th>
             <th scope="col">Author</th>
             <th scope="col">Line</th>
@@ -199,6 +235,7 @@ export default function BlameView({ repo, file, onLineClick }: BlameViewProps) {
             const isEvenGroup = groupInfo ? groupInfo.groupIndex % 2 === 0 : false;
             const isGroupStart = groupInfo?.isGroupStart ?? false;
             const highlightedLine = highlightResult.lines[index];
+            const isDirectCommit = directCommits.has(line.sha);
 
             return (
               <tr
@@ -212,7 +249,7 @@ export default function BlameView({ repo, file, onLineClick }: BlameViewProps) {
                 }}
                 tabIndex={onLineClick ? 0 : undefined}
                 role={onLineClick ? 'button' : undefined}
-                aria-label={onLineClick ? `Line ${line.lineNumber}, commit ${shortenSha(line.sha)} by ${line.author}` : undefined}
+                aria-label={onLineClick ? `Line ${line.lineNumber}, commit ${shortenSha(line.sha)} by ${line.author}${isDirectCommit ? ', direct commit' : ''}` : undefined}
                 className={`
                   group
                   ${isEvenGroup ? 'bg-zinc-50 dark:bg-zinc-900/50' : 'bg-white dark:bg-zinc-950'}
@@ -221,6 +258,60 @@ export default function BlameView({ repo, file, onLineClick }: BlameViewProps) {
                   transition-colors
                 `}
               >
+                {/* Direct commit indicator */}
+                <td
+                  className={`
+                    w-6 border-r border-zinc-200 px-1 py-0.5 text-center
+                    dark:border-zinc-800
+                    ${isGroupStart ? '' : 'opacity-0'}
+                  `}
+                  aria-hidden={!isGroupStart}
+                >
+                  {isDirectCommit ? (
+                    <span
+                      title="Direct commit"
+                      className="inline-flex items-center justify-center"
+                    >
+                      <svg
+                        className="h-3.5 w-3.5 text-blue-500 dark:text-blue-400"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                        aria-label="Direct commit"
+                        role="img"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M13 10V3L4 14h7v7l9-11h-7z"
+                        />
+                      </svg>
+                    </span>
+                  ) : (
+                    <span
+                      title="Part of merge"
+                      className="inline-flex items-center justify-center"
+                    >
+                      <svg
+                        className="h-3.5 w-3.5 text-purple-500 dark:text-purple-400"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                        aria-label="Part of merge"
+                        role="img"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"
+                        />
+                      </svg>
+                    </span>
+                  )}
+                </td>
+
                 {/* Blame gutter: SHA */}
                 <td
                   className={`
