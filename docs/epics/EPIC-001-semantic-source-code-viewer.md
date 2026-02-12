@@ -63,6 +63,11 @@ A semantic source code viewer with a git-blame style interface optimized for dev
 | Direct commit handling | Standalone change units for non-merge commits |
 | Input validation | Clear error messages for invalid paths |
 | Loading states | Visual feedback during data fetching |
+| **File rename tracking** | Track line history across file renames |
+| **Line movement tracking** | Detect when lines moved within a file |
+| **Cross-file move tracking** | Detect when code moved between files |
+| **LLM summaries** | AI-generated explanations of line history using Anthropic |
+| **API key configuration** | User provides their own Anthropic API key |
 
 ### Out of Scope (MVP)
 
@@ -78,22 +83,40 @@ A semantic source code viewer with a git-blame style interface optimized for dev
 
 ## User Stories
 
-### Sprint 1 (P1 - Core MVP)
+### Sprint 1 (P1 - Core Blame View)
 
-| Story ID | Title | Link |
-|----------|-------|------|
-| STORY-001 | Enter repository and file path | [STORY-001](../stories/STORY-001-enter-repo-and-file-path.md) |
-| STORY-002 | View file with git blame annotations | [STORY-002](../stories/STORY-002-view-blame-annotations.md) |
-| STORY-003 | View commit details for a line | [STORY-003](../stories/STORY-003-view-commit-details.md) |
-| STORY-004 | View merge commit context | [STORY-004](../stories/STORY-004-view-merge-commit-context.md) |
-| STORY-005 | Handle direct commits to main | [STORY-005](../stories/STORY-005-handle-direct-commits.md) |
+| Story ID | Title | Points | Link |
+|----------|-------|--------|------|
+| STORY-001 | Enter repository and file path | 2 | [STORY-001](../stories/STORY-001-enter-repo-and-file-path.md) |
+| STORY-002 | View file with git blame annotations | 5 | [STORY-002](../stories/STORY-002-view-blame-annotations.md) |
+| STORY-003 | View commit details for a line | 3 | [STORY-003](../stories/STORY-003-view-commit-details.md) |
+| STORY-004 | View merge commit context | 5 | [STORY-004](../stories/STORY-004-view-merge-commit-context.md) |
+| STORY-005 | Handle direct commits to main | 2 | [STORY-005](../stories/STORY-005-handle-direct-commits.md) |
 
-### Sprint 2 (P2 - Polish)
+**Sprint 1 Total: 17 points**
 
-| Story ID | Title | Link |
-|----------|-------|------|
-| STORY-006 | Validate repository and file inputs | [STORY-006](../stories/STORY-006-validate-inputs.md) |
-| STORY-007 | Display loading states | [STORY-007](../stories/STORY-007-loading-states.md) |
+### Sprint 2 (P2 - Polish + Lineage Tracking)
+
+| Story ID | Title | Points | Link |
+|----------|-------|--------|------|
+| STORY-006 | Validate repository and file inputs | 3 | [STORY-006](../stories/STORY-006-validate-inputs.md) |
+| STORY-007 | Display loading states | 3 | [STORY-007](../stories/STORY-007-loading-states.md) |
+| STORY-008 | Track line history across file renames | 5 | [STORY-008](../stories/STORY-008-track-file-renames.md) |
+| STORY-009 | Track line movement within file | 3 | [STORY-009](../stories/STORY-009-track-line-movement.md) |
+
+**Sprint 2 Total: 14 points**
+
+### Sprint 3 (P1 - LLM Integration)
+
+| Story ID | Title | Points | Link |
+|----------|-------|--------|------|
+| STORY-010 | Track method/function moves between files | 8 | [STORY-010](../stories/STORY-010-track-method-moves.md) |
+| STORY-011 | Configure Anthropic API key | 2 | [STORY-011](../stories/STORY-011-configure-api-key.md) |
+| STORY-012 | Generate LLM summary of line history | 5 | [STORY-012](../stories/STORY-012-llm-summary.md) |
+
+**Sprint 3 Total: 15 points**
+
+### Epic Total: 46 points
 
 ---
 
@@ -153,8 +176,9 @@ A semantic source code viewer with a git-blame style interface optimized for dev
 | Milestone | Target Date | Deliverables |
 |-----------|-------------|--------------|
 | Sprint 1 Complete | End of Week 2 | Core blame view with drill-down working |
-| Sprint 2 Complete | End of Week 4 | Validation, loading states, polish |
-| MVP Release | End of Week 4 | Shippable product |
+| Sprint 2 Complete | End of Week 4 | Validation, loading states, lineage tracking |
+| Sprint 3 Complete | End of Week 6 | LLM integration, full lineage with AI summaries |
+| MVP Release | End of Week 6 | Full product with LLM-powered insights |
 
 ---
 
