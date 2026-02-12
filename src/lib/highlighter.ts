@@ -245,18 +245,61 @@ function parseHighlightedHtml(
   const lines: HighlightedLine[] = [];
   const codeLines = originalCode.split("\n");
 
-  // Shiki wraps each line in a span with class "line"
-  // Extract content between <span class="line"> and </span>
-  const lineRegex = /<span class="line">(.*?)<\/span>/g;
-  let match;
+  // Shiki wraps each line in a span with class="line"
+  // Format: <span class="line">...tokens...</span>\n<span class="line">...
+  // The line content contains nested spans for syntax tokens.
+  // We split by the line span pattern and extract content from each segment.
+  const lineStartTag = '<span class="line">';
+  const lineEndTag = '</span>';
+  
+  // Find all line spans by splitting the HTML
+  let searchStart = 0;
   let lineNumber = 1;
-
-  while ((match = lineRegex.exec(html)) !== null) {
-    lines.push({
-      lineNumber,
-      html: match[1] || "",
-    });
-    lineNumber++;
+  
+  while (true) {
+    const lineStart = html.indexOf(lineStartTag, searchStart);
+    if (lineStart === -1) break;
+    
+    const contentStart = lineStart + lineStartTag.length;
+    
+    // Find the closing </span> for this line
+    // We need to find the </span> that closes the line span, not inner token spans
+    // The line's closing </span> is followed by either \n, </code>, or end of string
+    let depth = 1;
+    let pos = contentStart;
+    let contentEnd = -1;
+    
+    while (pos < html.length && depth > 0) {
+      const nextOpen = html.indexOf('<span', pos);
+      const nextClose = html.indexOf('</span>', pos);
+      
+      if (nextClose === -1) break;
+      
+      if (nextOpen !== -1 && nextOpen < nextClose) {
+        // Found an opening span before the next closing span
+        depth++;
+        pos = nextOpen + 5;
+      } else {
+        // Found a closing span
+        depth--;
+        if (depth === 0) {
+          contentEnd = nextClose;
+        }
+        pos = nextClose + 7;
+      }
+    }
+    
+    if (contentEnd !== -1) {
+      const content = html.slice(contentStart, contentEnd);
+      lines.push({
+        lineNumber,
+        html: content,
+      });
+      lineNumber++;
+      searchStart = contentEnd + 7; // Move past </span>
+    } else {
+      break;
+    }
   }
 
   // Handle edge case: if no lines matched, create plain text lines
