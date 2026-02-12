@@ -195,6 +195,10 @@ export interface BlameLine {
   author: string;
   authorEmail: string;
   timestamp: number;
+  /** Original line number if the line was moved within the file (TASK-059) */
+  originalLine?: number;
+  /** If line was moved, the previous SHA where it originated (TASK-059) */
+  previousSha?: string;
 }
 
 /**
@@ -241,6 +245,13 @@ export class GitError extends Error {
  * \t{content}
  * ```
  *
+ * With -M flag for move detection, when a line was moved within the file,
+ * the "previous" line shows where the content originally came from:
+ * ```
+ * {sha} {original-line} {final-line}
+ * previous {prev-sha} {prev-filename}
+ * ```
+ *
  * @param porcelainOutput - Raw output from git blame --porcelain
  * @returns Array of BlameLine objects
  */
@@ -253,6 +264,9 @@ export function parseBlameOutput(porcelainOutput: string): BlameLine[] {
   let currentAuthorEmail = "";
   let currentTimestamp = 0;
   let currentFinalLine = 0;
+  let currentOriginalLine = 0;
+  let currentPreviousSha: string | undefined;
+  let currentPreviousOriginalLine: number | undefined;
 
   // Cache for commit metadata (sha -> metadata)
   // Git blame porcelain only outputs full commit info once per commit
@@ -274,7 +288,11 @@ export function parseBlameOutput(porcelainOutput: string): BlameLine[] {
 
     if (commitMatch) {
       currentSha = commitMatch[1];
+      currentOriginalLine = parseInt(commitMatch[2], 10);
       currentFinalLine = parseInt(commitMatch[3], 10);
+      // Reset previous info for new line block
+      currentPreviousSha = undefined;
+      currentPreviousOriginalLine = undefined;
 
       // Check if we have cached metadata for this commit
       const cached = commitCache.get(currentSha);
@@ -306,6 +324,20 @@ export function parseBlameOutput(porcelainOutput: string): BlameLine[] {
       continue;
     }
 
+    // TASK-058: Parse "previous" line for move detection with -M flag
+    // Format: "previous {sha} {filename}"
+    if (line.startsWith("previous ")) {
+      const previousMatch = line.match(/^previous\s+([a-f0-9]{40})\s+(.+)$/);
+      if (previousMatch) {
+        currentPreviousSha = previousMatch[1];
+        // If line was moved (original line differs from final line), track original position
+        if (currentOriginalLine !== currentFinalLine) {
+          currentPreviousOriginalLine = currentOriginalLine;
+        }
+      }
+      continue;
+    }
+
     // When we hit the filename line, cache the commit metadata
     if (line.startsWith("filename ")) {
       if (!commitCache.has(currentSha)) {
@@ -322,18 +354,26 @@ export function parseBlameOutput(porcelainOutput: string): BlameLine[] {
     if (line.startsWith("\t")) {
       const content = line.slice(1); // Remove leading tab
 
-      lines.push({
+      const blameLine: BlameLine = {
         lineNumber: currentFinalLine,
         content,
         sha: currentSha,
         author: currentAuthor,
         authorEmail: currentAuthorEmail,
         timestamp: currentTimestamp,
-      });
+      };
+
+      // TASK-059: Add movement info if line was moved within file
+      if (currentPreviousSha && currentPreviousOriginalLine !== undefined) {
+        blameLine.originalLine = currentPreviousOriginalLine;
+        blameLine.previousSha = currentPreviousSha;
+      }
+
+      lines.push(blameLine);
       continue;
     }
 
-    // Skip other metadata lines (committer, summary, previous, boundary, etc.)
+    // Skip other metadata lines (committer, summary, boundary, etc.)
   }
 
   return lines;
@@ -366,8 +406,9 @@ export async function execGitBlame(
   }
 
   try {
+    // TASK-057: Use -M flag to detect lines moved within file
     const { stdout, stderr } = await execAsync(
-      `git blame --porcelain -- "${filePath}"`,
+      `git blame -M --porcelain -- "${filePath}"`,
       {
         cwd: repoPath,
         maxBuffer: 50 * 1024 * 1024, // 50MB buffer for large files

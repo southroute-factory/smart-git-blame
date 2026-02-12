@@ -3,6 +3,19 @@
 import { useEffect, useState, useCallback, useMemo } from 'react';
 import { highlightCode, type HighlightResult } from '@/lib/highlighter';
 import { ProgressBar } from '@/components/ProgressIndicator';
+import { Tooltip } from '@/components/Tooltip';
+
+/**
+ * Line movement information when a line was moved within the file
+ */
+export interface LineMovement {
+  /** Original line number before movement */
+  movedFrom: number;
+  /** SHA of commit where movement occurred */
+  movedInCommit?: string;
+  /** Number of lines moved (+/-) */
+  delta: number;
+}
 
 /**
  * Represents a single line of blame data from the API
@@ -14,6 +27,8 @@ export interface BlameLine {
   author: string;
   authorEmail: string;
   timestamp: number;
+  /** Movement information if line was moved */
+  movement?: LineMovement;
 }
 
 /**
@@ -67,6 +82,7 @@ export function BlameViewSkeleton({ rows = 15 }: { rows?: number }) {
         <thead className="sr-only">
           <tr>
             <th scope="col">Type</th>
+            <th scope="col">Movement</th>
             <th scope="col">Commit</th>
             <th scope="col">Author</th>
             <th scope="col">Line</th>
@@ -94,6 +110,14 @@ export function BlameViewSkeleton({ rows = 15 }: { rows?: number }) {
                 <td className="w-6 border-r border-zinc-200 px-1 py-0.5 dark:border-zinc-800">
                   {isGroupStart && (
                     <div className="mx-auto h-3.5 w-3.5 rounded-full bg-zinc-200 dark:bg-zinc-700" />
+                  )}
+                </td>
+
+                {/* Movement indicator skeleton */}
+                <td className="w-10 border-r border-zinc-200 px-1 py-0.5 dark:border-zinc-800">
+                  {/* Only show movement placeholder occasionally for realistic appearance */}
+                  {i % 7 === 2 && (
+                    <div className="mx-auto h-3 w-6 rounded bg-zinc-200 dark:bg-zinc-700" />
                   )}
                 </td>
 
@@ -320,6 +344,138 @@ function shortenSha(sha: string): string {
 }
 
 /**
+ * Props for the LineMovementIndicator component
+ */
+interface LineMovementIndicatorProps {
+  /** Movement information for the line */
+  movement?: LineMovement;
+  /** Optional callback when navigating to original line */
+  onNavigateToOriginal?: (lineNumber: number) => void;
+}
+
+/**
+ * Tooltip content for line movement information.
+ * Displays detailed movement info with accessible, interactive content.
+ */
+function MovementTooltipContent({
+  movement,
+  onJumpToOriginal,
+}: {
+  movement: LineMovement;
+  onJumpToOriginal?: () => void;
+}) {
+  const direction = movement.delta > 0 ? 'down' : 'up';
+  const absoluteDelta = Math.abs(movement.delta);
+
+  return (
+    <div className="min-w-[160px] space-y-1.5 text-left">
+      <p className="font-medium">
+        Moved from line {movement.movedFrom}
+      </p>
+      <p className="text-zinc-300 dark:text-zinc-600">
+        {direction === 'down'
+          ? `Moved down ${absoluteDelta} line${absoluteDelta !== 1 ? 's' : ''}`
+          : `Moved up ${absoluteDelta} line${absoluteDelta !== 1 ? 's' : ''}`}
+      </p>
+      {movement.movedInCommit && (
+        <p className="text-zinc-400 dark:text-zinc-500">
+          In commit{' '}
+          <code className="rounded bg-zinc-700 px-1 dark:bg-zinc-300">
+            {shortenSha(movement.movedInCommit)}
+          </code>
+        </p>
+      )}
+      {onJumpToOriginal && (
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            onJumpToOriginal();
+          }}
+          className="mt-1 text-purple-300 hover:text-purple-200 hover:underline dark:text-purple-600 dark:hover:text-purple-700"
+        >
+          Jump to original position →
+        </button>
+      )}
+    </div>
+  );
+}
+
+/**
+ * Visual indicator for lines that have been moved within the file.
+ * Shows direction (up/down arrow) and delta, with tooltip showing original line number.
+ */
+function LineMovementIndicator({ movement, onNavigateToOriginal }: LineMovementIndicatorProps) {
+  const handleJumpToOriginal = useCallback(() => {
+    if (movement) {
+      onNavigateToOriginal?.(movement.movedFrom);
+    }
+  }, [movement, onNavigateToOriginal]);
+
+  if (!movement) return null;
+
+  const direction = movement.delta > 0 ? 'down' : 'up';
+  const absoluteDelta = Math.abs(movement.delta);
+
+  const tooltipContent = (
+    <MovementTooltipContent
+      movement={movement}
+      onJumpToOriginal={onNavigateToOriginal ? handleJumpToOriginal : undefined}
+    />
+  );
+
+  return (
+    <Tooltip content={tooltipContent} position="right" delay={300} interactive>
+      <button
+        type="button"
+        onClick={(e) => {
+          e.stopPropagation();
+          handleJumpToOriginal();
+        }}
+        className="inline-flex items-center gap-0.5 rounded px-1 py-0.5 text-xs text-purple-600 transition-colors hover:bg-purple-100 hover:text-purple-800 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-1 dark:text-purple-400 dark:hover:bg-purple-900/30 dark:hover:text-purple-300"
+        aria-label={`Line moved ${direction} from line ${movement.movedFrom}, ${absoluteDelta} line${absoluteDelta !== 1 ? 's' : ''} ${direction}. Click to jump to original position.`}
+        aria-describedby={`movement-tooltip-${movement.movedFrom}`}
+      >
+        {direction === 'down' ? (
+          <svg
+            className="h-3 w-3"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+            aria-hidden="true"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M19 14l-7 7m0 0l-7-7m7 7V3"
+            />
+          </svg>
+        ) : (
+          <svg
+            className="h-3 w-3"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+            aria-hidden="true"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M5 10l7-7m0 0l7 7m-7-7v18"
+            />
+          </svg>
+        )}
+        <span className="text-[10px] font-medium tabular-nums">
+          {absoluteDelta}
+        </span>
+      </button>
+    </Tooltip>
+  );
+}
+
+/**
  * BlameView component displays file content with syntax highlighting
  * and blame information (commit SHA, author) for each line.
  * 
@@ -509,6 +665,7 @@ export default function BlameView({ repo, file, onLineClick, onPreviousFilename 
         <thead className="sr-only">
           <tr>
             <th scope="col">Type</th>
+            <th scope="col">Movement</th>
             <th scope="col">Commit</th>
             <th scope="col">Author</th>
             <th scope="col">Line</th>
@@ -535,7 +692,7 @@ export default function BlameView({ repo, file, onLineClick, onPreviousFilename 
                 }}
                 tabIndex={onLineClick ? 0 : undefined}
                 role={onLineClick ? 'button' : undefined}
-                aria-label={onLineClick ? `Line ${line.lineNumber}, commit ${shortenSha(line.sha)} by ${line.author}${isDirectCommit ? ', direct commit' : ''}` : undefined}
+                aria-label={onLineClick ? `Line ${line.lineNumber}, commit ${shortenSha(line.sha)} by ${line.author}${isDirectCommit ? ', direct commit' : ''}${line.movement ? `, moved from line ${line.movement.movedFrom}` : ''}` : undefined}
                 className={`
                   group
                   ${isEvenGroup ? 'bg-zinc-50 dark:bg-zinc-900/50' : 'bg-white dark:bg-zinc-950'}
@@ -596,6 +753,11 @@ export default function BlameView({ repo, file, onLineClick, onPreviousFilename 
                       </svg>
                     </span>
                   )}
+                </td>
+
+                {/* Line movement indicator */}
+                <td className="w-10 border-r border-zinc-200 px-1 py-0.5 text-center dark:border-zinc-800">
+                  <LineMovementIndicator movement={line.movement} />
                 </td>
 
                 {/* Blame gutter: SHA */}
