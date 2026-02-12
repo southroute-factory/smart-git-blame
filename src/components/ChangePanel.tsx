@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
+import LLMSummary from './LLMSummary';
 
 /**
  * Commit details from the API
@@ -82,6 +83,8 @@ export interface ChangePanelProps {
   commitSha: string | null;
   /** Repository path */
   repo: string;
+  /** File path for LLM context (optional) */
+  file?: string;
 }
 
 /**
@@ -292,6 +295,7 @@ export default function ChangePanel({
   onClose,
   commitSha,
   repo,
+  file = '',
 }: ChangePanelProps) {
   const [commitDetails, setCommitDetails] = useState<CommitDetails | null>(null);
   const [mergeContext, setMergeContext] = useState<MergeContext | null>(null);
@@ -717,6 +721,21 @@ export default function ChangePanel({
                       )}
                     </div>
                   )}
+                </div>
+
+                {/* LLM Summary Section - TASK-099 */}
+                <div>
+                  <h3 className="mb-2 text-xs font-medium uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
+                    AI Explanation
+                  </h3>
+                  <LLMSummary
+                    repo={repo}
+                    file={file}
+                    commitSha={commitDetails.sha}
+                    commitMessage={commitDetails.message}
+                    author={commitDetails.author}
+                    date={commitDetails.date}
+                  />
                 </div>
               </div>
             )}

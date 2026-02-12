@@ -241,6 +241,7 @@ function BlameContent() {
         onClose={handleCloseChangePanel}
         commitSha={selectedLine?.sha ?? null}
         repo={repo}
+        file={file}
       />
     </div>
   );
