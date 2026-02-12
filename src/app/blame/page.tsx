@@ -2,22 +2,117 @@
 
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { Suspense, useCallback } from 'react';
+import { Suspense, useCallback, useState } from 'react';
 import BlameView, { type BlameLine } from '@/components/BlameView';
+
+/**
+ * Format a timestamp to a readable date string
+ */
+function formatDate(timestamp: number): string {
+  return new Date(timestamp * 1000).toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+}
+
+/**
+ * Panel showing selected line information
+ */
+function SelectedLinePanel({
+  line,
+  onClose,
+}: {
+  line: BlameLine;
+  onClose: () => void;
+}) {
+  return (
+    <div
+      role="region"
+      aria-label="Selected line details"
+      className="rounded-lg border border-zinc-200 bg-zinc-50 p-4 dark:border-zinc-700 dark:bg-zinc-900"
+    >
+      <div className="flex items-start justify-between gap-4">
+        <div className="flex flex-col gap-3">
+          <div className="flex items-center gap-2">
+            <span className="rounded bg-zinc-200 px-2 py-0.5 font-mono text-xs text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300">
+              Line {line.lineNumber}
+            </span>
+            <span className="rounded bg-blue-100 px-2 py-0.5 font-mono text-xs text-blue-700 dark:bg-blue-900 dark:text-blue-300">
+              {line.sha.slice(0, 7)}
+            </span>
+          </div>
+          <div className="grid gap-2 text-sm">
+            <div className="flex gap-2">
+              <span className="font-medium text-zinc-500 dark:text-zinc-400">
+                Author:
+              </span>
+              <span className="text-zinc-800 dark:text-zinc-200">
+                {line.author}
+              </span>
+              <span className="text-zinc-500 dark:text-zinc-400">
+                &lt;{line.authorEmail}&gt;
+              </span>
+            </div>
+            <div className="flex gap-2">
+              <span className="font-medium text-zinc-500 dark:text-zinc-400">
+                Date:
+              </span>
+              <span className="text-zinc-800 dark:text-zinc-200">
+                {formatDate(line.timestamp)}
+              </span>
+            </div>
+            <div className="flex gap-2">
+              <span className="font-medium text-zinc-500 dark:text-zinc-400">
+                Content:
+              </span>
+              <code className="max-w-md truncate rounded bg-zinc-200 px-1.5 py-0.5 font-mono text-xs text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300">
+                {line.content || '(empty line)'}
+              </code>
+            </div>
+          </div>
+        </div>
+        <button
+          onClick={onClose}
+          aria-label="Close selected line panel"
+          className="rounded p-1 text-zinc-400 transition-colors hover:bg-zinc-200 hover:text-zinc-600 dark:hover:bg-zinc-800 dark:hover:text-zinc-300"
+        >
+          <svg
+            className="h-4 w-4"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+            aria-hidden="true"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M6 18L18 6M6 6l12 12"
+            />
+          </svg>
+        </button>
+      </div>
+    </div>
+  );
+}
 
 function BlameContent() {
   const searchParams = useSearchParams();
   const repo = searchParams.get('repo');
   const file = searchParams.get('file');
+  const [selectedLine, setSelectedLine] = useState<BlameLine | null>(null);
 
-  // Handler for line clicks - can be extended for future functionality
+  // Handler for line clicks - shows selected line info
   const handleLineClick = useCallback((line: BlameLine) => {
-    // Future: could open commit details, show diff, etc.
-    console.log('Line clicked:', {
-      lineNumber: line.lineNumber,
-      sha: line.sha,
-      author: line.author,
-    });
+    setSelectedLine(line);
+  }, []);
+
+  // Handler to close the selected line panel
+  const handleClosePanel = useCallback(() => {
+    setSelectedLine(null);
   }, []);
 
   if (!repo || !file) {
@@ -56,6 +151,10 @@ function BlameContent() {
           </p>
         </div>
       </div>
+
+      {selectedLine && (
+        <SelectedLinePanel line={selectedLine} onClose={handleClosePanel} />
+      )}
 
       <BlameView repo={repo} file={file} onLineClick={handleLineClick} />
 

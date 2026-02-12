@@ -4,6 +4,33 @@ import { promisify } from "util";
 const execAsync = promisify(exec);
 
 /**
+ * Represents a commit in a merge context
+ */
+export interface MergeCommitInfo {
+  sha: string;
+  message: string;
+  author: string;
+}
+
+/**
+ * Represents the merge context for a commit
+ */
+export interface MergeContext {
+  /** True if the queried commit is itself a merge commit */
+  isMergeCommit: boolean;
+  /** True if committed directly to main (no merge parent) */
+  isDirectCommit: boolean;
+  /** The merge commit that brought this commit to main */
+  mergeCommit?: {
+    sha: string;
+    message: string;
+    date: string;
+  };
+  /** List of commits included in the merge */
+  commitsInMerge?: MergeCommitInfo[];
+}
+
+/**
  * Represents commit details from git show
  */
 export interface CommitDetails {
@@ -432,6 +459,316 @@ export async function execGitShow(
 
     throw new GitError(
       execError.message || "Git show failed",
+      execError.code,
+      execError.stderr
+    );
+  }
+}
+
+/**
+ * Validates repository path and commit SHA for use in git commands.
+ *
+ * @param repoPath - Absolute path to the git repository
+ * @param sha - Commit SHA to validate
+ * @throws GitError if validation fails
+ */
+function validateGitInputs(repoPath: string, sha: string): void {
+  if (!repoPath || typeof repoPath !== "string") {
+    throw new GitError("Invalid repository path");
+  }
+  if (!sha || typeof sha !== "string") {
+    throw new GitError("Invalid commit SHA");
+  }
+
+  const dangerousChars = /[;&|`$(){}[\]<>\\'"!#*?~]/;
+  if (dangerousChars.test(repoPath)) {
+    throw new GitError("Invalid characters in repository path");
+  }
+
+  const shaPattern = /^[a-f0-9]{4,40}$/i;
+  if (!shaPattern.test(sha)) {
+    throw new GitError("Invalid commit SHA format");
+  }
+}
+
+/**
+ * Checks if a commit is a merge commit (has multiple parents).
+ *
+ * @param repoPath - Absolute path to the git repository
+ * @param sha - Commit SHA to check
+ * @returns Promise resolving to true if the commit is a merge
+ */
+async function isMerge(repoPath: string, sha: string): Promise<boolean> {
+  try {
+    const { stdout } = await execAsync(
+      `git rev-parse "${sha}^2"`,
+      {
+        cwd: repoPath,
+        encoding: "utf-8",
+      }
+    );
+    // If this succeeds, the commit has a second parent (merge commit)
+    return stdout.trim().length > 0;
+  } catch {
+    // No second parent means it's not a merge
+    return false;
+  }
+}
+
+/**
+ * Checks if a commit is reachable from HEAD via first-parent only
+ * (i.e., it was committed directly to main, not via a merge).
+ *
+ * @param repoPath - Absolute path to the git repository
+ * @param sha - Commit SHA to check
+ * @returns Promise resolving to true if the commit is on the main line
+ */
+async function isOnMainLine(repoPath: string, sha: string): Promise<boolean> {
+  try {
+    const { stdout } = await execAsync(
+      `git log --first-parent --format="%H" HEAD`,
+      {
+        cwd: repoPath,
+        maxBuffer: 50 * 1024 * 1024,
+        encoding: "utf-8",
+      }
+    );
+    const mainLineCommits = stdout.trim().split("\n");
+    return mainLineCommits.includes(sha);
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Finds merge commits that brought a commit to the main branch.
+ *
+ * @param repoPath - Absolute path to the git repository
+ * @param sha - Commit SHA to find merge for
+ * @returns Promise resolving to array of merge commit SHAs (most recent first)
+ */
+async function findMergeCommits(
+  repoPath: string,
+  sha: string
+): Promise<string[]> {
+  try {
+    // Find merge commits in the ancestry path from sha to HEAD
+    const { stdout } = await execAsync(
+      `git log --ancestry-path "${sha}"..HEAD --merges --format="%H"`,
+      {
+        cwd: repoPath,
+        maxBuffer: 10 * 1024 * 1024,
+        encoding: "utf-8",
+      }
+    );
+
+    if (!stdout.trim()) {
+      return [];
+    }
+
+    const mergeCommits = stdout.trim().split("\n").filter(Boolean);
+
+    // Filter to only include merges that actually contain this commit
+    // (ancestry-path may include unrelated merges)
+    const validMerges: string[] = [];
+    for (const merge of mergeCommits) {
+      try {
+        // Check if the commit is an ancestor of the merge's second parent
+        await execAsync(
+          `git merge-base --is-ancestor "${sha}" "${merge}^2"`,
+          {
+            cwd: repoPath,
+            encoding: "utf-8",
+          }
+        );
+        validMerges.push(merge);
+      } catch {
+        // Not an ancestor of merge^2, skip
+      }
+    }
+
+    return validMerges;
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * Gets information about a merge commit.
+ *
+ * @param repoPath - Absolute path to the git repository
+ * @param sha - Merge commit SHA
+ * @returns Promise resolving to merge commit info
+ */
+async function getMergeCommitInfo(
+  repoPath: string,
+  sha: string
+): Promise<{ sha: string; message: string; date: string }> {
+  const { stdout } = await execAsync(
+    `git log -1 --format="%H%n%s%n%aI" "${sha}"`,
+    {
+      cwd: repoPath,
+      encoding: "utf-8",
+    }
+  );
+
+  const [commitSha, message, date] = stdout.trim().split("\n");
+  return {
+    sha: commitSha,
+    message,
+    date,
+  };
+}
+
+/**
+ * Gets all commits that were included in a merge.
+ *
+ * @param repoPath - Absolute path to the git repository
+ * @param mergeSha - The merge commit SHA
+ * @returns Promise resolving to array of commits in the merge
+ */
+async function getCommitsInMerge(
+  repoPath: string,
+  mergeSha: string
+): Promise<MergeCommitInfo[]> {
+  try {
+    // Get commits between first parent and second parent of the merge
+    // This gives us the commits that were merged in
+    const { stdout } = await execAsync(
+      `git log --format="%H|%s|%an" "${mergeSha}^1..${mergeSha}^2"`,
+      {
+        cwd: repoPath,
+        maxBuffer: 10 * 1024 * 1024,
+        encoding: "utf-8",
+      }
+    );
+
+    if (!stdout.trim()) {
+      return [];
+    }
+
+    return stdout
+      .trim()
+      .split("\n")
+      .filter(Boolean)
+      .map((line) => {
+        const [sha, message, author] = line.split("|");
+        return { sha, message, author };
+      });
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * Gets the merge context for a commit, determining if it was merged via PR
+ * or committed directly to the main branch.
+ *
+ * @param repoPath - Absolute path to the git repository
+ * @param commitSha - Commit SHA to analyze
+ * @returns Promise resolving to MergeContext
+ * @throws GitError if git command fails
+ *
+ * @example
+ * ```typescript
+ * const context = await getMergeContext('/path/to/repo', 'abc123');
+ * if (context.isDirectCommit) {
+ *   console.log('Commit was made directly to main');
+ * } else if (context.mergeCommit) {
+ *   console.log(`Merged via: ${context.mergeCommit.sha}`);
+ *   console.log(`Commits in merge: ${context.commitsInMerge?.length}`);
+ * }
+ * ```
+ */
+export async function getMergeContext(
+  repoPath: string,
+  commitSha: string
+): Promise<MergeContext> {
+  validateGitInputs(repoPath, commitSha);
+
+  try {
+    // First, resolve the short SHA to full SHA
+    const { stdout: fullShaOutput } = await execAsync(
+      `git rev-parse "${commitSha}"`,
+      {
+        cwd: repoPath,
+        encoding: "utf-8",
+      }
+    );
+    const fullSha = fullShaOutput.trim();
+
+    // Check if this commit itself is a merge commit
+    const commitIsMerge = await isMerge(repoPath, fullSha);
+
+    if (commitIsMerge) {
+      // The commit is itself a merge commit
+      const mergeInfo = await getMergeCommitInfo(repoPath, fullSha);
+      const commitsInMerge = await getCommitsInMerge(repoPath, fullSha);
+
+      return {
+        isMergeCommit: true,
+        isDirectCommit: false,
+        mergeCommit: mergeInfo,
+        commitsInMerge,
+      };
+    }
+
+    // Check if the commit is directly on the main line
+    const onMainLine = await isOnMainLine(repoPath, fullSha);
+
+    if (onMainLine) {
+      // Commit was made directly to main
+      return {
+        isMergeCommit: false,
+        isDirectCommit: true,
+      };
+    }
+
+    // Find merge commits that brought this commit to main
+    const mergeCommits = await findMergeCommits(repoPath, fullSha);
+
+    if (mergeCommits.length === 0) {
+      // No merge found - commit might be on a branch not yet merged
+      // or it could be an old commit where merge history is complex
+      return {
+        isMergeCommit: false,
+        isDirectCommit: false,
+      };
+    }
+
+    // Use the most recent (first) merge commit
+    const mergeSha = mergeCommits[0];
+    const mergeInfo = await getMergeCommitInfo(repoPath, mergeSha);
+    const commitsInMerge = await getCommitsInMerge(repoPath, mergeSha);
+
+    return {
+      isMergeCommit: false,
+      isDirectCommit: false,
+      mergeCommit: mergeInfo,
+      commitsInMerge,
+    };
+  } catch (error) {
+    if (error instanceof GitError) {
+      throw error;
+    }
+
+    const execError = error as { code?: number; stderr?: string; message?: string };
+
+    if (execError.stderr?.includes("fatal: bad object") ||
+        execError.stderr?.includes("unknown revision")) {
+      throw new GitError(`Commit not found: ${commitSha}`, 128, execError.stderr);
+    }
+
+    if (execError.stderr?.includes("fatal: not a git repository")) {
+      throw new GitError(
+        `Not a git repository: ${repoPath}`,
+        128,
+        execError.stderr
+      );
+    }
+
+    throw new GitError(
+      execError.message || "Failed to get merge context",
       execError.code,
       execError.stderr
     );
