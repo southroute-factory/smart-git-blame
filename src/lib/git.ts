@@ -1235,3 +1235,141 @@ export async function getPreviousFilename(
     return undefined;
   }
 }
+
+/**
+ * Result of uncommitted changes detection
+ * TASK-071: Git status detection for files
+ */
+export interface UncommittedChangesResult {
+  /** True if the file has unstaged modifications (working tree changes) */
+  modified: boolean;
+  /** True if the file has staged changes (in the index) */
+  staged: boolean;
+}
+
+/**
+ * Parses git status --porcelain output for a specific file.
+ *
+ * Git status --porcelain format uses two-character status codes:
+ * - First character: staged (index) status
+ * - Second character: working tree (unstaged) status
+ *
+ * Common status codes:
+ * - ' ' = unmodified
+ * - M = modified
+ * - A = added
+ * - D = deleted
+ * - R = renamed
+ * - C = copied
+ * - U = updated but unmerged
+ * - ? = untracked
+ * - ! = ignored
+ *
+ * Examples:
+ * - "M  file.ts" = staged modification
+ * - " M file.ts" = unstaged modification
+ * - "MM file.ts" = staged AND unstaged modifications
+ * - "A  file.ts" = new file, staged
+ * - "?? file.ts" = untracked file
+ *
+ * @param output - Raw output from git status --porcelain -- {file}
+ * @returns UncommittedChangesResult with modified/staged status
+ */
+export function parseGitStatusOutput(output: string): UncommittedChangesResult {
+  const trimmed = output.trim();
+
+  // If empty output, file has no changes
+  if (!trimmed) {
+    return { modified: false, staged: false };
+  }
+
+  // Parse the first line (should only be one line for single file)
+  const line = trimmed.split("\n")[0];
+
+  // Need at least 2 characters for status codes
+  if (line.length < 2) {
+    return { modified: false, staged: false };
+  }
+
+  // First character = index/staged status
+  // Second character = working tree/unstaged status
+  const indexStatus = line[0];
+  const workTreeStatus = line[1];
+
+  // Staged changes: any non-space, non-? in first position
+  // (M, A, D, R, C, U indicate staged changes)
+  const staged = indexStatus !== " " && indexStatus !== "?";
+
+  // Working tree (unstaged) changes: any non-space, non-? in second position
+  // Note: '?' in both positions means untracked, which we don't count as "modified"
+  const modified = workTreeStatus !== " " && workTreeStatus !== "?";
+
+  return { modified, staged };
+}
+
+/**
+ * Checks if a file has uncommitted changes (staged or unstaged).
+ *
+ * TASK-071: Add git status detection
+ * Uses `git status --porcelain -- {file}` to detect uncommitted changes.
+ *
+ * @param repoPath - Absolute path to the git repository
+ * @param filePath - Path to the file relative to repo root
+ * @returns Promise resolving to UncommittedChangesResult
+ * @throws GitError if git command fails
+ *
+ * @example
+ * ```typescript
+ * const status = await hasUncommittedChanges('/path/to/repo', 'src/file.ts');
+ * if (status.modified) {
+ *   console.log('File has unstaged changes');
+ * }
+ * if (status.staged) {
+ *   console.log('File has staged changes');
+ * }
+ * ```
+ */
+export async function hasUncommittedChanges(
+  repoPath: string,
+  filePath: string
+): Promise<UncommittedChangesResult> {
+  validateFileInputs(repoPath, filePath);
+
+  try {
+    const { stdout, stderr } = await execAsync(
+      `git status --porcelain -- "${filePath}"`,
+      {
+        cwd: repoPath,
+        maxBuffer: 1024 * 1024, // 1MB buffer (should be plenty for single file status)
+        encoding: "utf-8",
+      }
+    );
+
+    // Git may output warnings to stderr even on success
+    if (stderr && !stdout && stderr.includes("fatal:")) {
+      throw new GitError(`Git status failed: ${stderr}`, 1, stderr);
+    }
+
+    return parseGitStatusOutput(stdout);
+  } catch (error) {
+    if (error instanceof GitError) {
+      throw error;
+    }
+
+    const execError = error as { code?: number; stderr?: string; message?: string };
+
+    if (execError.stderr?.includes("fatal: not a git repository")) {
+      throw new GitError(
+        `Not a git repository: ${repoPath}`,
+        128,
+        execError.stderr
+      );
+    }
+
+    throw new GitError(
+      execError.message || "Failed to check uncommitted changes",
+      execError.code,
+      execError.stderr
+    );
+  }
+}

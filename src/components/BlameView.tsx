@@ -41,6 +41,14 @@ interface MergeContextResponse {
 }
 
 /**
+ * File status indicating uncommitted changes
+ */
+export interface FileStatus {
+  hasUncommittedChanges: boolean;
+  warningMessage?: string;
+}
+
+/**
  * API response format for blame data
  */
 export interface BlameResponse {
@@ -49,6 +57,8 @@ export interface BlameResponse {
   repo: string;
   /** Previous filename if the file was renamed */
   previousFilename?: string;
+  /** File status for uncommitted changes */
+  fileStatus?: FileStatus;
 }
 
 /**
@@ -344,6 +354,66 @@ function shortenSha(sha: string): string {
 }
 
 /**
+ * Warning banner for files with uncommitted changes
+ */
+function UncommittedWarningBanner({
+  message,
+  onDismiss,
+}: {
+  message?: string;
+  onDismiss?: () => void;
+}) {
+  return (
+    <div
+      role="alert"
+      className="animate-fade-in flex items-center justify-between gap-3 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-amber-800 dark:border-amber-800 dark:bg-amber-950 dark:text-amber-200"
+    >
+      <div className="flex items-center gap-3">
+        <svg
+          className="h-5 w-5 flex-shrink-0 text-amber-500"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+          aria-hidden="true"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+          />
+        </svg>
+        <p className="text-sm">
+          {message || 'This file has uncommitted changes. Showing blame for last committed version.'}
+        </p>
+      </div>
+      {onDismiss && (
+        <button
+          onClick={onDismiss}
+          className="flex-shrink-0 rounded p-1 transition-colors hover:bg-amber-100 dark:hover:bg-amber-900"
+          aria-label="Dismiss warning"
+        >
+          <svg
+            className="h-4 w-4"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+            aria-hidden="true"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M6 18L18 6M6 6l12 12"
+            />
+          </svg>
+        </button>
+      )}
+    </div>
+  );
+}
+
+/**
  * Props for the LineMovementIndicator component
  */
 interface LineMovementIndicatorProps {
@@ -497,6 +567,8 @@ export default function BlameView({ repo, file, onLineClick, onPreviousFilename 
   // Track loading progress for large files (TASK-046)
   const [loadingProgress, setLoadingProgress] = useState<number | undefined>(undefined);
   const [loadingStage, setLoadingStage] = useState<string>('');
+  // Track dismissed uncommitted warning (TASK-073)
+  const [warningDismissed, setWarningDismissed] = useState(false);
 
   // Fetch blame data from API
   useEffect(() => {
@@ -655,8 +727,17 @@ export default function BlameView({ repo, file, onLineClick, onPreviousFilename 
     return <BlameViewError error={{ message: 'No blame data available' }} />;
   }
 
+  const showUncommittedWarning = blameData.fileStatus?.hasUncommittedChanges && !warningDismissed;
+
   return (
-    <div className="animate-fade-in w-full overflow-x-auto rounded-lg border border-zinc-200 dark:border-zinc-800">
+    <div className="flex flex-col gap-3">
+      {showUncommittedWarning && (
+        <UncommittedWarningBanner
+          message={blameData.fileStatus?.warningMessage}
+          onDismiss={() => setWarningDismissed(true)}
+        />
+      )}
+      <div className="animate-fade-in w-full overflow-x-auto rounded-lg border border-zinc-200 dark:border-zinc-800">
       <table
         className="w-full border-collapse font-mono text-sm"
         role="grid"
@@ -815,6 +896,7 @@ export default function BlameView({ repo, file, onLineClick, onPreviousFilename 
           })}
         </tbody>
       </table>
+      </div>
     </div>
   );
 }

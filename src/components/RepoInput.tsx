@@ -86,7 +86,7 @@ export default function RepoInput({ onSubmit }: RepoInputProps) {
 
   const repoPathError = touched.repoPath ? errors.repoPath : undefined;
   const filePathError = touched.filePath ? errors.filePath : undefined;
-  const hasErrors = Object.keys(errors).length > 0;
+  const hasErrors = Object.values(errors).some(Boolean);
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-4 w-full max-w-md" noValidate>
@@ -105,7 +105,15 @@ export default function RepoInput({ onSubmit }: RepoInputProps) {
             setRepoPath(e.target.value);
             if (touched.repoPath) {
               const error = validatePath(e.target.value, 'Repository path');
-              setErrors((prev) => ({ ...prev, repoPath: error }));
+              setErrors((prev) => {
+                const next = { ...prev };
+                if (error) {
+                  next.repoPath = error;
+                } else {
+                  delete next.repoPath;
+                }
+                return next;
+              });
             }
           }}
           onBlur={() => handleBlur('repoPath')}
@@ -140,7 +148,15 @@ export default function RepoInput({ onSubmit }: RepoInputProps) {
             setFilePath(e.target.value);
             if (touched.filePath) {
               const error = validatePath(e.target.value, 'File path');
-              setErrors((prev) => ({ ...prev, filePath: error }));
+              setErrors((prev) => {
+                const next = { ...prev };
+                if (error) {
+                  next.filePath = error;
+                } else {
+                  delete next.filePath;
+                }
+                return next;
+              });
             }
           }}
           onBlur={() => handleBlur('filePath')}

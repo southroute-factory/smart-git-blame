@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { execGitBlame, GitBlameResult, GitError, getPreviousFilename } from "@/lib/git";
+import { execGitBlame, GitBlameResult, GitError, getPreviousFilename, hasUncommittedChanges, UncommittedChangesResult } from "@/lib/git";
 import {
   validateBlameParams,
   validateRepoExists,
@@ -10,12 +10,15 @@ import {
 } from "@/lib/validation";
 
 /**
- * Extended GitBlameResult with rename detection.
+ * Extended GitBlameResult with rename detection and uncommitted status.
  * TASK-052: Add rename detection to blame response
+ * TASK-072: Add uncommitted changes status to blame response
  */
 interface GitBlameResultWithRename extends GitBlameResult {
   /** Previous filename if the file was renamed, undefined otherwise */
   previousFilename?: string;
+  /** Uncommitted changes status for the file (TASK-072) */
+  uncommittedChanges?: UncommittedChangesResult;
 }
 
 /**
@@ -103,9 +106,13 @@ export async function GET(
     // TASK-052: Add rename detection to blame response
     const previousFilename = await getPreviousFilename(repo, file);
 
+    // TASK-072: Add uncommitted changes status to blame response
+    const uncommittedChanges = await hasUncommittedChanges(repo, file);
+
     const response: GitBlameResultWithRename = {
       ...result,
       ...(previousFilename && { previousFilename }),
+      uncommittedChanges,
     };
 
     return NextResponse.json(response, { status: 200 });
