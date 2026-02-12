@@ -55,18 +55,20 @@ const SUPPORTED_LANGUAGES: BundledLanguage[] = [
   "svelte",
 ];
 
-// Default theme for syntax highlighting
-// Using github-dark for good contrast and familiarity
-const DEFAULT_THEME = "github-dark";
+// Themes for light and dark mode
+// Using github themes for good contrast and familiarity
+const LIGHT_THEME = "github-light";
+const DARK_THEME = "github-dark";
 
 /**
  * Gets or creates the singleton highlighter instance.
  * Lazy initialization for better startup performance.
+ * Loads both light and dark themes for dual-theme support.
  */
 async function getHighlighter(): Promise<Highlighter> {
   if (!highlighterInstance) {
     highlighterInstance = await createHighlighter({
-      themes: [DEFAULT_THEME],
+      themes: [LIGHT_THEME, DARK_THEME],
       langs: SUPPORTED_LANGUAGES,
     });
   }
@@ -207,10 +209,15 @@ export async function highlightCode(
     }
   }
 
-  // Get highlighted HTML
+  // Get highlighted HTML with dual theme support (light/dark mode)
+  // Uses CSS variables so the correct theme is applied based on user's color scheme
   const html = highlighter.codeToHtml(code, {
     lang: effectiveLanguage,
-    theme: DEFAULT_THEME,
+    themes: {
+      light: LIGHT_THEME,
+      dark: DARK_THEME,
+    },
+    defaultColor: false, // Use CSS variables instead of inline colors
   });
 
   // Parse the HTML to extract individual lines
@@ -219,7 +226,7 @@ export async function highlightCode(
   return {
     lines,
     language: effectiveLanguage,
-    theme: DEFAULT_THEME,
+    theme: `${LIGHT_THEME}/${DARK_THEME}`,
   };
 }
 

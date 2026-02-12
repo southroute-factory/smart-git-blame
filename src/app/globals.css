@@ -3,6 +3,42 @@
 :root {
   --background: #ffffff;
   --foreground: #171717;
+  
+  /* Shiki dual-theme CSS variables for syntax highlighting */
+  /* Light theme colors (github-light) */
+  --shiki-light: #24292e;
+  --shiki-light-bg: transparent;
+}
+
+/* Dark mode Shiki variables */
+@media (prefers-color-scheme: dark) {
+  :root {
+    /* Dark theme colors (github-dark) */
+    --shiki-dark: #e1e4e8;
+    --shiki-dark-bg: transparent;
+  }
+}
+
+/* Shiki dual theme support - show light colors in light mode, dark colors in dark mode */
+.shiki,
+.shiki span {
+  color: var(--shiki-light) !important;
+  background-color: var(--shiki-light-bg) !important;
+}
+
+@media (prefers-color-scheme: dark) {
+  .shiki,
+  .shiki span {
+    color: var(--shiki-dark) !important;
+    background-color: var(--shiki-dark-bg) !important;
+  }
+}
+
+/* Also support Tailwind dark mode class */
+.dark .shiki,
+.dark .shiki span {
+  color: var(--shiki-dark) !important;
+  background-color: var(--shiki-dark-bg) !important;
 }
 
 @theme inline {
