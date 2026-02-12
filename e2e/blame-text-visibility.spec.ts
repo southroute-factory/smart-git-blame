@@ -69,12 +69,10 @@ test.describe('Blame View Code Text Visibility', () => {
   test('code content is present in DOM', async ({ page }) => {
     await page.goto('/blame?repo=/test/repo&file=test.ts');
     
-    // Wait for loading to complete
+    // Wait for loading skeleton to disappear and actual content to appear
     await page.waitForSelector('table[role="grid"]');
-    
-    // Check that code cells contain actual text content
-    const codeCells = page.locator('td').last();
-    await expect(codeCells).toBeVisible();
+    // Wait for the actual code content (not skeleton)
+    await page.waitForSelector('td span[style*="--shiki"]', { timeout: 10000 });
     
     // Get all code cells (last column in each row)
     const rows = page.locator('tbody tr');
@@ -95,6 +93,8 @@ test.describe('Blame View Code Text Visibility', () => {
   test('code text is visible (not transparent or hidden)', async ({ page }) => {
     await page.goto('/blame?repo=/test/repo&file=test.ts');
     await page.waitForSelector('table[role="grid"]');
+    // Wait for syntax highlighting to complete
+    await page.waitForSelector('td span[style*="--shiki"]', { timeout: 10000 });
     
     const rows = page.locator('tbody tr');
     const firstRowCodeCell = rows.first().locator('td').last();
@@ -112,9 +112,8 @@ test.describe('Blame View Code Text Visibility', () => {
   test('highlighted code spans contain text', async ({ page }) => {
     await page.goto('/blame?repo=/test/repo&file=test.ts');
     await page.waitForSelector('table[role="grid"]');
-    
-    // Wait a bit for syntax highlighting to complete
-    await page.waitForTimeout(500);
+    // Wait for syntax highlighting to complete
+    await page.waitForSelector('td span[style*="--shiki"]', { timeout: 10000 });
     
     const rows = page.locator('tbody tr');
     const firstRowCodeCell = rows.first().locator('td').last();
@@ -164,6 +163,8 @@ test.describe('Blame View Code Text Visibility', () => {
   test('raw line content available without highlighting', async ({ page }) => {
     await page.goto('/blame?repo=/test/repo&file=test.ts');
     await page.waitForSelector('table[role="grid"]');
+    // Wait for syntax highlighting to complete
+    await page.waitForSelector('td span[style*="--shiki"]', { timeout: 10000 });
     
     // Get all visible text on the page
     const pageText = await page.locator('body').textContent();
