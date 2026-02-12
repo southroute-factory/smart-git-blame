@@ -87,6 +87,19 @@ export class RepoValidationError extends Error {
 }
 
 /**
+ * Error thrown when file validation fails.
+ */
+export class FileValidationError extends Error {
+  constructor(
+    message: string,
+    public readonly code: "FILE_NOT_FOUND" | "NOT_A_FILE"
+  ) {
+    super(message);
+    this.name = "FileValidationError";
+  }
+}
+
+/**
  * Validates and parses blame API query parameters using Zod.
  *
  * @param params - URLSearchParams from the request
@@ -146,6 +159,65 @@ export async function validateRepoExists(repoPath: string): Promise<void> {
     throw new RepoValidationError(
       `Not a git repository: ${repoPath}`,
       "NOT_A_GIT_REPO"
+    );
+  }
+}
+
+/**
+ * Validates that a file exists in the repository and is tracked by git.
+ *
+ * @param repoPath - Absolute path to the repository
+ * @param filePath - Relative path to the file within the repository
+ * @throws FileValidationError if file doesn't exist or is not tracked
+ */
+export async function validateFileExists(
+  repoPath: string,
+  filePath: string
+): Promise<void> {
+  const fullPath = `${repoPath}/${filePath}`;
+
+  // First check if file exists on filesystem
+  try {
+    const stats = await fs.stat(fullPath);
+    if (!stats.isFile()) {
+      throw new FileValidationError(
+        `Path is not a file: ${filePath}`,
+        "NOT_A_FILE"
+      );
+    }
+  } catch (error) {
+    if (error instanceof FileValidationError) {
+      throw error;
+    }
+    // File doesn't exist on filesystem
+    throw new FileValidationError(
+      `File not found: ${filePath}`,
+      "FILE_NOT_FOUND"
+    );
+  }
+
+  // Check if file is tracked by git using git ls-files
+  try {
+    const { stdout } = await execAsync(`git ls-files -- "${filePath}"`, {
+      cwd: repoPath,
+      encoding: "utf-8",
+    });
+
+    // If the file is tracked, git ls-files will return the filename
+    if (!stdout.trim()) {
+      throw new FileValidationError(
+        `File not tracked by git: ${filePath}`,
+        "FILE_NOT_FOUND"
+      );
+    }
+  } catch (error) {
+    if (error instanceof FileValidationError) {
+      throw error;
+    }
+    // git ls-files failed - treat as file not found
+    throw new FileValidationError(
+      `Unable to verify file in repository: ${filePath}`,
+      "FILE_NOT_FOUND"
     );
   }
 }

@@ -86,36 +86,92 @@ export interface ChangePanelProps {
 
 /**
  * Loading skeleton for the change panel
+ * Matches the layout of the actual ChangePanel content with pulsing placeholders
+ * Uses fade-in animation for smooth appearance (TASK-045)
  */
-function ChangePanelSkeleton() {
+export function ChangePanelSkeleton() {
   return (
-    <div className="animate-pulse space-y-4">
-      <div className="h-6 w-24 rounded bg-zinc-200 dark:bg-zinc-700" />
-      <div className="space-y-2">
-        <div className="h-4 w-full rounded bg-zinc-200 dark:bg-zinc-700" />
-        <div className="h-4 w-3/4 rounded bg-zinc-200 dark:bg-zinc-700" />
+    <div
+      className="animate-fade-in animate-pulse space-y-6"
+      role="status"
+      aria-label="Loading commit details"
+    >
+      {/* SHA Section */}
+      <div>
+        <div className="mb-1 h-3 w-20 rounded bg-zinc-200 dark:bg-zinc-700" />
+        <div className="flex items-center gap-2">
+          <div className="h-6 w-64 rounded bg-zinc-200 dark:bg-zinc-700" />
+          <div className="h-6 w-6 rounded bg-zinc-200 dark:bg-zinc-700" />
+        </div>
       </div>
-      <div className="space-y-2">
-        <div className="h-4 w-1/2 rounded bg-zinc-200 dark:bg-zinc-700" />
-        <div className="h-4 w-2/3 rounded bg-zinc-200 dark:bg-zinc-700" />
+
+      {/* Author Section */}
+      <div>
+        <div className="mb-1 h-3 w-14 rounded bg-zinc-200 dark:bg-zinc-700" />
+        <div className="h-4 w-32 rounded bg-zinc-200 dark:bg-zinc-700" />
+        <div className="mt-1 h-4 w-48 rounded bg-zinc-200 dark:bg-zinc-700" />
       </div>
-      <div className="flex gap-4">
-        <div className="h-8 w-20 rounded bg-zinc-200 dark:bg-zinc-700" />
-        <div className="h-8 w-20 rounded bg-zinc-200 dark:bg-zinc-700" />
-        <div className="h-8 w-20 rounded bg-zinc-200 dark:bg-zinc-700" />
+
+      {/* Date Section */}
+      <div>
+        <div className="mb-1 h-3 w-10 rounded bg-zinc-200 dark:bg-zinc-700" />
+        <div className="h-4 w-24 rounded bg-zinc-200 dark:bg-zinc-700" />
+        <div className="mt-1 h-3 w-40 rounded bg-zinc-200 dark:bg-zinc-700" />
       </div>
+
+      {/* Message Section */}
+      <div>
+        <div className="mb-2 h-3 w-16 rounded bg-zinc-200 dark:bg-zinc-700" />
+        <div className="space-y-2">
+          <div className="h-4 w-full rounded bg-zinc-200 dark:bg-zinc-700" />
+          <div className="h-4 w-4/5 rounded bg-zinc-200 dark:bg-zinc-700" />
+          <div className="h-4 w-3/5 rounded bg-zinc-200 dark:bg-zinc-700" />
+        </div>
+      </div>
+
+      {/* Changes Stats Section */}
+      <div>
+        <div className="mb-2 h-3 w-16 rounded bg-zinc-200 dark:bg-zinc-700" />
+        <div className="flex flex-wrap gap-3">
+          {/* Files changed */}
+          <div className="rounded-lg bg-zinc-100 px-3 py-2 dark:bg-zinc-800">
+            <div className="mb-1 h-3 w-10 rounded bg-zinc-200 dark:bg-zinc-700" />
+            <div className="h-6 w-6 rounded bg-zinc-200 dark:bg-zinc-700" />
+          </div>
+          {/* Additions */}
+          <div className="rounded-lg bg-green-50 px-3 py-2 dark:bg-green-950">
+            <div className="mb-1 h-3 w-16 rounded bg-green-200 dark:bg-green-800" />
+            <div className="h-6 w-8 rounded bg-green-200 dark:bg-green-800" />
+          </div>
+          {/* Deletions */}
+          <div className="rounded-lg bg-red-50 px-3 py-2 dark:bg-red-950">
+            <div className="mb-1 h-3 w-16 rounded bg-red-200 dark:bg-red-800" />
+            <div className="h-6 w-8 rounded bg-red-200 dark:bg-red-800" />
+          </div>
+        </div>
+      </div>
+
+      {/* Merge Context Section */}
+      <div>
+        <div className="mb-2 h-3 w-24 rounded bg-zinc-200 dark:bg-zinc-700" />
+        <div className="h-10 w-full rounded-lg bg-zinc-100 dark:bg-zinc-800" />
+      </div>
+
+      {/* Screen reader text */}
+      <span className="sr-only">Loading commit details...</span>
     </div>
   );
 }
 
 /**
  * Error display for the change panel
+ * Includes fade animation for smooth appearance (TASK-045)
  */
 function ChangePanelError({ message }: { message: string }) {
   return (
     <div
       role="alert"
-      className="flex flex-col items-center gap-3 rounded-lg border border-red-200 bg-red-50 p-6 text-center dark:border-red-800 dark:bg-red-950"
+      className="animate-fade-in flex flex-col items-center gap-3 rounded-lg border border-red-200 bg-red-50 p-6 text-center dark:border-red-800 dark:bg-red-950"
     >
       <svg
         className="h-6 w-6 text-red-500"
@@ -458,7 +514,7 @@ export default function ChangePanel({
             {error && <ChangePanelError message={error} />}
 
             {!error && commitDetails && (
-              <div className="space-y-6">
+              <div className="animate-slide-in-up space-y-6">
                 {/* SHA - Full, copyable */}
                 <div>
                   <h3 className="mb-1 text-xs font-medium uppercase tracking-wider text-zinc-500 dark:text-zinc-400">

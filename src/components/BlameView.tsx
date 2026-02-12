@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback, useMemo } from 'react';
 import { highlightCode, type HighlightResult } from '@/lib/highlighter';
+import { ProgressBar } from '@/components/ProgressIndicator';
 
 /**
  * Represents a single line of blame data from the API
@@ -48,10 +49,11 @@ export interface BlameViewProps {
 /**
  * Loading skeleton for the blame view
  * Matches the layout of the actual BlameView table with pulsing placeholder rows
+ * Includes fade-in animation for smooth appearance
  */
 export function BlameViewSkeleton({ rows = 15 }: { rows?: number }) {
   return (
-    <div className="w-full overflow-x-auto rounded-lg border border-zinc-200 dark:border-zinc-800">
+    <div className="animate-fade-in w-full overflow-x-auto rounded-lg border border-zinc-200 dark:border-zinc-800">
       <table
         className="w-full border-collapse font-mono text-sm"
         role="grid"
@@ -131,29 +133,177 @@ export function BlameViewSkeleton({ rows = 15 }: { rows?: number }) {
 }
 
 /**
- * Error display component
+ * Structured API error with field-specific errors
  */
-function BlameViewError({ message }: { message: string }) {
+interface ApiErrorDetails {
+  message: string;
+  code?: string;
+  field?: string;
+  status?: number;
+}
+
+/**
+ * Parse error message and detect error type
+ */
+function parseErrorType(message: string): 'not_found' | 'validation' | 'server' | 'network' {
+  const lowerMessage = message.toLowerCase();
+  if (lowerMessage.includes('not found') || lowerMessage.includes('does not exist')) {
+    return 'not_found';
+  }
+  if (
+    lowerMessage.includes('invalid') ||
+    lowerMessage.includes('required') ||
+    lowerMessage.includes('must be') ||
+    lowerMessage.includes('validation')
+  ) {
+    return 'validation';
+  }
+  if (lowerMessage.includes('network') || lowerMessage.includes('fetch')) {
+    return 'network';
+  }
+  return 'server';
+}
+
+/**
+ * Error display component with support for structured errors and retry
+ */
+function BlameViewError({
+  error,
+  onRetry,
+}: {
+  error: ApiErrorDetails;
+  onRetry?: () => void;
+}) {
+  const errorType = parseErrorType(error.message);
+  const isRetryable = errorType === 'network' || errorType === 'server';
+
+  // Determine styling based on error type
+  const styles = {
+    not_found: {
+      border: 'border-amber-200 dark:border-amber-800',
+      bg: 'bg-amber-50 dark:bg-amber-950',
+      text: 'text-amber-700 dark:text-amber-300',
+      icon: 'text-amber-500',
+    },
+    validation: {
+      border: 'border-orange-200 dark:border-orange-800',
+      bg: 'bg-orange-50 dark:bg-orange-950',
+      text: 'text-orange-700 dark:text-orange-300',
+      icon: 'text-orange-500',
+    },
+    server: {
+      border: 'border-red-200 dark:border-red-800',
+      bg: 'bg-red-50 dark:bg-red-950',
+      text: 'text-red-700 dark:text-red-300',
+      icon: 'text-red-500',
+    },
+    network: {
+      border: 'border-blue-200 dark:border-blue-800',
+      bg: 'bg-blue-50 dark:bg-blue-950',
+      text: 'text-blue-700 dark:text-blue-300',
+      icon: 'text-blue-500',
+    },
+  }[errorType];
+
+  const errorTitles = {
+    not_found: 'File Not Found',
+    validation: 'Invalid Request',
+    server: 'Server Error',
+    network: 'Connection Error',
+  };
+
+  const errorIcons = {
+    not_found: (
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+      />
+    ),
+    validation: (
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+      />
+    ),
+    server: (
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+      />
+    ),
+    network: (
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M8.111 16.404a5.5 5.5 0 017.778 0M12 20h.01m-7.08-7.071c3.904-3.905 10.236-3.905 14.141 0M1.394 9.393c5.857-5.857 15.355-5.857 21.213 0"
+      />
+    ),
+  };
+
   return (
     <div
       role="alert"
-      className="flex flex-col items-center gap-4 rounded-lg border border-red-200 bg-red-50 p-8 text-center dark:border-red-800 dark:bg-red-950"
+      aria-live="assertive"
+      className={`animate-fade-in flex flex-col items-center gap-4 rounded-lg border ${styles.border} ${styles.bg} p-8 text-center transition-all duration-300 ease-out`}
     >
+      {/* Icon */}
       <svg
-        className="h-8 w-8 text-red-500"
+        className={`h-10 w-10 ${styles.icon}`}
         fill="none"
         stroke="currentColor"
         viewBox="0 0 24 24"
         aria-hidden="true"
       >
-        <path
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          strokeWidth={2}
-          d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
-        />
+        {errorIcons[errorType]}
       </svg>
-      <p className="text-sm text-red-700 dark:text-red-300">{message}</p>
+
+      {/* Title */}
+      <h3 className={`text-lg font-semibold ${styles.text}`}>
+        {errorTitles[errorType]}
+      </h3>
+
+      {/* Message */}
+      <p className={`max-w-md text-sm ${styles.text}`}>
+        {error.message}
+      </p>
+
+      {/* Field-specific error if available */}
+      {error.field && (
+        <p className={`text-xs ${styles.text} opacity-80`}>
+          Field: <span className="font-medium">{error.field}</span>
+        </p>
+      )}
+
+      {/* Retry button for retryable errors */}
+      {isRetryable && onRetry && (
+        <button
+          onClick={onRetry}
+          className="mt-2 inline-flex items-center gap-2 rounded-md bg-zinc-900 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-zinc-800 focus:outline-none focus:ring-2 focus:ring-zinc-500 focus:ring-offset-2 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200"
+        >
+          <svg
+            className="h-4 w-4"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+            aria-hidden="true"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+            />
+          </svg>
+          Try again
+        </button>
+      )}
     </div>
   );
 }
@@ -179,36 +329,62 @@ export default function BlameView({ repo, file, onLineClick }: BlameViewProps) {
   const [blameData, setBlameData] = useState<BlameResponse | null>(null);
   const [highlightResult, setHighlightResult] = useState<HighlightResult | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<ApiErrorDetails | null>(null);
   // Track which commits are direct commits (not part of a merge)
   const [directCommits, setDirectCommits] = useState<Set<string>>(new Set());
+  // Track retry attempts for refetching
+  const [retryCount, setRetryCount] = useState(0);
+  // Track loading progress for large files (TASK-046)
+  const [loadingProgress, setLoadingProgress] = useState<number | undefined>(undefined);
+  const [loadingStage, setLoadingStage] = useState<string>('');
 
   // Fetch blame data from API
   useEffect(() => {
     const fetchBlameData = async () => {
       setIsLoading(true);
       setError(null);
+      setLoadingProgress(0);
+      setLoadingStage('Fetching blame data...');
 
       try {
         const params = new URLSearchParams({ repo, file });
+        setLoadingProgress(10);
         const response = await fetch(`/api/blame?${params.toString()}`);
 
         if (!response.ok) {
           const errorData = await response.json().catch(() => ({}));
-          throw new Error(errorData.error || `Failed to fetch blame data: ${response.status}`);
+          const errorMessage = errorData.error || `Failed to fetch blame data: ${response.status}`;
+          setError({
+            message: errorMessage,
+            code: errorData.code,
+            field: errorData.field,
+            status: response.status,
+          });
+          setIsLoading(false);
+          setLoadingProgress(undefined);
+          setLoadingStage('');
+          return;
         }
 
+        setLoadingProgress(30);
+        setLoadingStage('Processing response...');
         const data: BlameResponse = await response.json();
         setBlameData(data);
 
         // Apply syntax highlighting
+        setLoadingProgress(50);
+        setLoadingStage('Highlighting syntax...');
         const code = data.lines.map((line) => line.content).join('\n');
         const highlighted = await highlightCode(code, { filename: file });
         setHighlightResult(highlighted);
 
         // Fetch merge context for unique commits to identify direct commits
+        setLoadingProgress(70);
+        setLoadingStage('Loading commit context...');
         const uniqueShas = [...new Set(data.lines.map((line) => line.sha))];
         const directCommitSet = new Set<string>();
+        const totalCommits = uniqueShas.length;
+        let completedCommits = 0;
         
         // Fetch merge context for each unique commit in parallel
         await Promise.all(
@@ -224,20 +400,40 @@ export default function BlameView({ repo, file, onLineClick }: BlameViewProps) {
               }
             } catch {
               // Silently ignore merge context fetch failures for individual commits
+            } finally {
+              // Update progress as each commit context is fetched
+              completedCommits++;
+              const commitProgress = 70 + Math.round((completedCommits / totalCommits) * 25);
+              setLoadingProgress(commitProgress);
             }
           })
         );
         
         setDirectCommits(directCommitSet);
+        setLoadingProgress(100);
+        setLoadingStage('Complete');
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'An unexpected error occurred');
+        setError({
+          message: err instanceof Error ? err.message : 'An unexpected error occurred',
+          code: 'NETWORK_ERROR',
+        });
       } finally {
         setIsLoading(false);
+        // Reset progress after a brief delay to allow completion animation
+        setTimeout(() => {
+          setLoadingProgress(undefined);
+          setLoadingStage('');
+        }, 300);
       }
     };
 
     fetchBlameData();
-  }, [repo, file]);
+  }, [repo, file, retryCount]);
+
+  // Retry handler for error recovery
+  const handleRetry = useCallback(() => {
+    setRetryCount((prev) => prev + 1);
+  }, []);
 
   // Handle line click
   const handleLineClick = useCallback(
@@ -268,19 +464,34 @@ export default function BlameView({ repo, file, onLineClick }: BlameViewProps) {
   }, [blameData]);
 
   if (isLoading) {
-    return <BlameViewSkeleton />;
+    return (
+      <div className="flex flex-col gap-3">
+        {/* Progress indicator for large file loading (TASK-046) */}
+        <div className="flex items-center gap-3">
+          <div className="flex-1">
+            <ProgressBar progress={loadingProgress} />
+          </div>
+          {loadingStage && (
+            <span className="animate-fade-in text-xs text-zinc-500 dark:text-zinc-400">
+              {loadingStage}
+            </span>
+          )}
+        </div>
+        <BlameViewSkeleton />
+      </div>
+    );
   }
 
   if (error) {
-    return <BlameViewError message={error} />;
+    return <BlameViewError error={error} onRetry={handleRetry} />;
   }
 
   if (!blameData || !highlightResult) {
-    return <BlameViewError message="No blame data available" />;
+    return <BlameViewError error={{ message: 'No blame data available' }} />;
   }
 
   return (
-    <div className="w-full overflow-x-auto rounded-lg border border-zinc-200 dark:border-zinc-800">
+    <div className="animate-fade-in w-full overflow-x-auto rounded-lg border border-zinc-200 dark:border-zinc-800">
       <table
         className="w-full border-collapse font-mono text-sm"
         role="grid"

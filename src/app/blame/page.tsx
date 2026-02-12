@@ -3,8 +3,9 @@
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { Suspense, useCallback, useState } from 'react';
-import BlameView, { type BlameLine } from '@/components/BlameView';
+import BlameView, { type BlameLine, BlameViewSkeleton } from '@/components/BlameView';
 import ChangePanel from '@/components/ChangePanel';
+import { ErrorBoundary, ErrorFallback } from '@/components/ErrorBoundary';
 
 /**
  * Format a timestamp to a readable date string
@@ -33,7 +34,7 @@ function SelectedLinePanel({
     <div
       role="region"
       aria-label="Selected line details"
-      className="rounded-lg border border-zinc-200 bg-zinc-50 p-4 dark:border-zinc-700 dark:bg-zinc-900"
+      className="animate-slide-in-up rounded-lg border border-zinc-200 bg-zinc-50 p-4 dark:border-zinc-700 dark:bg-zinc-900"
     >
       <div className="flex items-start justify-between gap-4">
         <div className="flex flex-col gap-3">
@@ -184,17 +185,62 @@ function BlameContent() {
   );
 }
 
+/**
+ * Loading skeleton for the blame page header
+ * Shown while search params are being parsed
+ * Includes fade animation for smooth appearance (TASK-045)
+ */
+function BlamePageLoadingSkeleton() {
+  return (
+    <div className="animate-fade-in flex w-full max-w-6xl flex-col gap-6">
+      {/* Header skeleton */}
+      <div className="flex flex-col gap-2">
+        <div className="h-8 w-32 animate-pulse rounded bg-zinc-200 dark:bg-zinc-700" />
+        <div className="flex flex-col gap-1">
+          <div className="flex items-center gap-2">
+            <div className="h-4 w-20 animate-pulse rounded bg-zinc-200 dark:bg-zinc-700" />
+            <div className="h-4 w-48 animate-pulse rounded bg-zinc-200 dark:bg-zinc-700" />
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="h-4 w-10 animate-pulse rounded bg-zinc-200 dark:bg-zinc-700" />
+            <div className="h-4 w-32 animate-pulse rounded bg-zinc-200 dark:bg-zinc-700" />
+          </div>
+        </div>
+      </div>
+
+      {/* BlameView skeleton */}
+      <BlameViewSkeleton rows={20} />
+
+      {/* Back link skeleton */}
+      <div className="h-4 w-24 animate-pulse rounded bg-zinc-200 dark:bg-zinc-700" />
+    </div>
+  );
+}
+
 export default function BlamePage() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
       <main className="flex min-h-screen w-full flex-col items-center justify-center px-8 py-16 bg-white dark:bg-black">
-        <Suspense
+        <ErrorBoundary
           fallback={
-            <div className="text-zinc-500 dark:text-zinc-400">Loading...</div>
+            <div className="flex w-full max-w-6xl flex-col items-center gap-6">
+              <ErrorFallback
+                error={new Error('An unexpected error occurred while loading the blame view. Please try again.')}
+                onRetry={() => window.location.reload()}
+              />
+              <Link
+                href="/"
+                className="text-sm font-medium text-zinc-600 transition-colors hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100"
+              >
+                ← Back to Home
+              </Link>
+            </div>
           }
         >
-          <BlameContent />
-        </Suspense>
+          <Suspense fallback={<BlamePageLoadingSkeleton />}>
+            <BlameContent />
+          </Suspense>
+        </ErrorBoundary>
       </main>
     </div>
   );
