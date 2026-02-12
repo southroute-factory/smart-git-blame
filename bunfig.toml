@@ -1,0 +1,13 @@
+# Bun configuration
+# https://bun.sh/docs/runtime/bunfig
+
+[test]
+# Exclude Playwright E2E tests from bun test runner
+# Playwright tests must be run with: npm run test:e2e
+exclude = ["e2e/**", "node_modules/**", "test-fixtures/**"]
+
+# Root directory for tests
+root = "."
+
+# Preload files before running tests (if needed)
+# preload = ["./test-setup.ts"]
