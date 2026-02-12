@@ -84,6 +84,35 @@ class MemoryCache<T> {
 const mergeContextCache = new MemoryCache<MergeContext>(5);
 
 /**
+ * Represents a file rename event in git history
+ */
+export interface FileRename {
+  /** Previous file path before rename */
+  fromPath: string;
+  /** New file path after rename */
+  toPath: string;
+  /** Commit SHA where the rename occurred */
+  commitSha: string;
+  /** ISO 8601 date string of the rename */
+  date: string;
+}
+
+/**
+ * Represents the complete file history including renames
+ */
+export interface FileHistory {
+  /** Current path of the file */
+  currentPath: string;
+  /** List of renames in reverse chronological order (newest first) */
+  renames: FileRename[];
+}
+
+/**
+ * Cache for file history lookups (5 minute TTL)
+ */
+const fileHistoryCache = new MemoryCache<FileHistory>(5);
+
+/**
  * Build cache key for merge context
  */
 export function buildMergeContextCacheKey(repo: string, sha: string): string {
@@ -903,5 +932,234 @@ export async function getMergeContext(
       execError.code,
       execError.stderr
     );
+  }
+}
+
+/**
+ * Build cache key for file history
+ */
+export function buildFileHistoryCacheKey(repo: string, file: string): string {
+  return `history:${repo}:${file}`;
+}
+
+/**
+ * Get cached file history if available
+ */
+export function getCachedFileHistory(repo: string, file: string): FileHistory | undefined {
+  const key = buildFileHistoryCacheKey(repo, file);
+  return fileHistoryCache.get(key);
+}
+
+/**
+ * Cache file history result
+ */
+export function cacheFileHistory(repo: string, file: string, history: FileHistory): void {
+  const key = buildFileHistoryCacheKey(repo, file);
+  fileHistoryCache.set(key, history);
+}
+
+/**
+ * Clear the file history cache
+ */
+export function clearFileHistoryCache(): void {
+  fileHistoryCache.clear();
+}
+
+/**
+ * Validates repository path and file path for use in git commands.
+ *
+ * @param repoPath - Absolute path to the git repository
+ * @param filePath - Relative path to file within repository
+ * @throws GitError if validation fails
+ */
+function validateFileInputs(repoPath: string, filePath: string): void {
+  if (!repoPath || typeof repoPath !== "string") {
+    throw new GitError("Invalid repository path");
+  }
+  if (!filePath || typeof filePath !== "string") {
+    throw new GitError("Invalid file path");
+  }
+
+  const dangerousChars = /[;&|`$(){}[\]<>\\'"!#*?~]/;
+  if (dangerousChars.test(repoPath) || dangerousChars.test(filePath)) {
+    throw new GitError("Invalid characters in path");
+  }
+}
+
+/**
+ * Parses git log --follow --name-status output to extract file rename history.
+ *
+ * The git log --follow --name-status --format="%H|%an|%ae|%at|%s" command outputs:
+ * ```
+ * {sha}|{author}|{email}|{timestamp}|{subject}
+ *
+ * R100    old/path.ts     new/path.ts
+ * M       path.ts
+ * ...
+ * ```
+ *
+ * We're interested in lines starting with 'R' (rename) which have format:
+ * R{similarity}\t{old_path}\t{new_path}
+ *
+ * @param output - Raw output from git log --follow --name-status
+ * @param currentPath - Current path of the file
+ * @returns FileHistory object with rename information
+ */
+export function parseFileHistoryOutput(output: string, currentPath: string): FileHistory {
+  const renames: FileRename[] = [];
+  const lines = output.split("\n");
+
+  let currentCommitSha = "";
+  let currentTimestamp = 0;
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+
+    // Skip empty lines
+    if (!line.trim()) {
+      continue;
+    }
+
+    // Check if this is a commit info line (format: sha|author|email|timestamp|subject)
+    const commitMatch = line.match(/^([a-f0-9]{40})\|([^|]*)\|([^|]*)\|(\d+)\|(.*)$/);
+    if (commitMatch) {
+      currentCommitSha = commitMatch[1];
+      currentTimestamp = parseInt(commitMatch[4], 10);
+      continue;
+    }
+
+    // Check if this is a rename line (format: R{similarity}\t{old_path}\t{new_path})
+    // Git uses tab characters to separate fields in --name-status output
+    const renameMatch = line.match(/^R\d*\t(.+)\t(.+)$/);
+    if (renameMatch && currentCommitSha) {
+      const fromPath = renameMatch[1];
+      const toPath = renameMatch[2];
+
+      renames.push({
+        fromPath,
+        toPath,
+        commitSha: currentCommitSha,
+        date: new Date(currentTimestamp * 1000).toISOString(),
+      });
+    }
+  }
+
+  return {
+    currentPath,
+    renames,
+  };
+}
+
+/**
+ * Gets the file history including rename tracking using git log --follow.
+ *
+ * TASK-049: Implement git log --follow parser
+ * Uses `git log --follow --name-status` to track file history across renames.
+ *
+ * TASK-051: Cache file history results
+ * Results are cached using MemoryCache with a 5-minute TTL.
+ *
+ * @param repoPath - Absolute path to the git repository
+ * @param filePath - Path to the file relative to repo root
+ * @returns Promise resolving to FileHistory with rename information
+ * @throws GitError if git command fails
+ *
+ * @example
+ * ```typescript
+ * const history = await getFileHistory('/path/to/repo', 'src/new-name.ts');
+ * if (history.renames.length > 0) {
+ *   console.log(`File was renamed from: ${history.renames[0].fromPath}`);
+ * }
+ * ```
+ */
+export async function getFileHistory(
+  repoPath: string,
+  filePath: string
+): Promise<FileHistory> {
+  validateFileInputs(repoPath, filePath);
+
+  // Check cache first (TASK-051)
+  const cached = getCachedFileHistory(repoPath, filePath);
+  if (cached) {
+    return cached;
+  }
+
+  try {
+    // Execute git log --follow to track file renames
+    // Format: sha|author|email|timestamp|subject
+    // --name-status shows the status (R for rename, M for modify, etc.)
+    const { stdout, stderr } = await execAsync(
+      `git log --follow --name-status --format="%H|%an|%ae|%at|%s" -- "${filePath}"`,
+      {
+        cwd: repoPath,
+        maxBuffer: 50 * 1024 * 1024, // 50MB buffer for large histories
+        encoding: "utf-8",
+      }
+    );
+
+    // Git may output warnings to stderr even on success
+    if (stderr && !stdout) {
+      throw new GitError(`Git log failed: ${stderr}`, 1, stderr);
+    }
+
+    const history = parseFileHistoryOutput(stdout, filePath);
+
+    // Cache the result (TASK-051)
+    cacheFileHistory(repoPath, filePath, history);
+
+    return history;
+  } catch (error) {
+    if (error instanceof GitError) {
+      throw error;
+    }
+
+    const execError = error as { code?: number; stderr?: string; message?: string };
+
+    if (execError.stderr?.includes("fatal: no such path")) {
+      throw new GitError(`File not found: ${filePath}`, 128, execError.stderr);
+    }
+
+    if (execError.stderr?.includes("fatal: not a git repository")) {
+      throw new GitError(
+        `Not a git repository: ${repoPath}`,
+        128,
+        execError.stderr
+      );
+    }
+
+    throw new GitError(
+      execError.message || "Failed to get file history",
+      execError.code,
+      execError.stderr
+    );
+  }
+}
+
+/**
+ * Gets the previous filename if the file was renamed, for use in blame responses.
+ *
+ * TASK-052: Add rename detection to blame response
+ * Returns the most recent previous name if the file has been renamed.
+ *
+ * @param repoPath - Absolute path to the git repository
+ * @param filePath - Current path to the file
+ * @returns Promise resolving to the previous filename, or undefined if never renamed
+ */
+export async function getPreviousFilename(
+  repoPath: string,
+  filePath: string
+): Promise<string | undefined> {
+  try {
+    const history = await getFileHistory(repoPath, filePath);
+
+    // Return the most recent previous name (first rename in the list)
+    if (history.renames.length > 0) {
+      return history.renames[0].fromPath;
+    }
+
+    return undefined;
+  } catch {
+    // If we can't get history, just return undefined
+    return undefined;
   }
 }

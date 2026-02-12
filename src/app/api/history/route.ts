@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { execGitBlame, GitBlameResult, GitError, getPreviousFilename } from "@/lib/git";
+import { getFileHistory, FileHistory, GitError } from "@/lib/git";
 import {
   validateBlameParams,
   validateRepoExists,
@@ -8,15 +8,6 @@ import {
   RepoValidationError,
   FileValidationError,
 } from "@/lib/validation";
-
-/**
- * Extended GitBlameResult with rename detection.
- * TASK-052: Add rename detection to blame response
- */
-interface GitBlameResultWithRename extends GitBlameResult {
-  /** Previous filename if the file was renamed, undefined otherwise */
-  previousFilename?: string;
-}
 
 /**
  * Structured error response format for API errors.
@@ -31,12 +22,41 @@ interface StructuredErrorResponse {
   field?: string;
 }
 
+/**
+ * GET /api/history
+ *
+ * Returns the file history including rename tracking for a given file.
+ *
+ * TASK-050: Create /api/history endpoint
+ *
+ * Query parameters:
+ * - repo: Absolute path to the git repository
+ * - file: Relative path to the file within the repository
+ *
+ * @returns FileHistory with currentPath and renames array
+ *
+ * @example
+ * GET /api/history?repo=/path/to/repo&file=src/components/Button.tsx
+ *
+ * Response:
+ * {
+ *   "currentPath": "src/components/Button.tsx",
+ *   "renames": [
+ *     {
+ *       "fromPath": "src/Button.tsx",
+ *       "toPath": "src/components/Button.tsx",
+ *       "commitSha": "abc123...",
+ *       "date": "2024-01-15T10:30:00.000Z"
+ *     }
+ *   ]
+ * }
+ */
 export async function GET(
   request: NextRequest
-): Promise<NextResponse<GitBlameResultWithRename | StructuredErrorResponse>> {
+): Promise<NextResponse<FileHistory | StructuredErrorResponse>> {
   const searchParams = request.nextUrl.searchParams;
 
-  // Validate query parameters with Zod
+  // Validate query parameters with Zod (reusing blame validation schema)
   let repo: string;
   let file: string;
 
@@ -98,17 +118,8 @@ export async function GET(
   }
 
   try {
-    const result = await execGitBlame(repo, file);
-
-    // TASK-052: Add rename detection to blame response
-    const previousFilename = await getPreviousFilename(repo, file);
-
-    const response: GitBlameResultWithRename = {
-      ...result,
-      ...(previousFilename && { previousFilename }),
-    };
-
-    return NextResponse.json(response, { status: 200 });
+    const result = await getFileHistory(repo, file);
+    return NextResponse.json(result, { status: 200 });
   } catch (error) {
     if (error instanceof GitError) {
       // Determine appropriate HTTP status code based on error

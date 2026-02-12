@@ -32,6 +32,8 @@ export interface BlameResponse {
   lines: BlameLine[];
   file: string;
   repo: string;
+  /** Previous filename if the file was renamed */
+  previousFilename?: string;
 }
 
 /**
@@ -44,6 +46,8 @@ export interface BlameViewProps {
   file: string;
   /** Optional callback when a line is clicked */
   onLineClick?: (line: BlameLine) => void;
+  /** Optional callback when previous filename is detected, passes the filename */
+  onPreviousFilename?: (filename: string) => void;
 }
 
 /**
@@ -325,7 +329,7 @@ function shortenSha(sha: string): string {
  * - Visual grouping for consecutive lines from the same commit
  * - Clickable lines for interaction
  */
-export default function BlameView({ repo, file, onLineClick }: BlameViewProps) {
+export default function BlameView({ repo, file, onLineClick, onPreviousFilename }: BlameViewProps) {
   const [blameData, setBlameData] = useState<BlameResponse | null>(null);
   const [highlightResult, setHighlightResult] = useState<HighlightResult | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -370,6 +374,11 @@ export default function BlameView({ repo, file, onLineClick }: BlameViewProps) {
         setLoadingStage('Processing response...');
         const data: BlameResponse = await response.json();
         setBlameData(data);
+
+        // TASK-054: Notify parent of previous filename if present
+        if (data.previousFilename && onPreviousFilename) {
+          onPreviousFilename(data.previousFilename);
+        }
 
         // Apply syntax highlighting
         setLoadingProgress(50);
@@ -428,7 +437,7 @@ export default function BlameView({ repo, file, onLineClick }: BlameViewProps) {
     };
 
     fetchBlameData();
-  }, [repo, file, retryCount]);
+  }, [repo, file, retryCount, onPreviousFilename]);
 
   // Retry handler for error recovery
   const handleRetry = useCallback(() => {
