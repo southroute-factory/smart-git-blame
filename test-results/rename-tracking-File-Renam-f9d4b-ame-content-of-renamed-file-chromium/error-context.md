@@ -1,0 +1,503 @@
+# Page snapshot
+
+```yaml
+- generic [active] [ref=e1]:
+  - main [ref=e3]:
+    - generic [ref=e4]:
+      - generic [ref=e5]:
+        - heading "Blame View" [level=1] [ref=e6]
+        - generic [ref=e7]:
+          - paragraph [ref=e8]: "Repository: /root/web-app/test-fixtures/sample-repo"
+          - paragraph [ref=e9]: "File: src/helpers.ts"
+      - alert [ref=e10]:
+        - generic [ref=e11]:
+          - img [ref=e12]
+          - generic [ref=e14]:
+            - generic [ref=e15]: File was renamed
+            - generic [ref=e16]:
+              - text: "Previously:"
+              - code [ref=e17]: src/utils.ts
+        - button "View history" [ref=e18]:
+          - generic [ref=e19]: View history
+          - img [ref=e20]
+      - grid "Blame view for src/helpers.ts" [ref=e24]:
+        - rowgroup [ref=e25]:
+          - row "Type Movement Cross-file origin Commit Author Line Code" [ref=e26]:
+            - columnheader "Type" [ref=e27]
+            - columnheader "Movement" [ref=e28]
+            - columnheader "Cross-file origin" [ref=e29]
+            - columnheader "Commit" [ref=e30]
+            - columnheader "Author" [ref=e31]
+            - columnheader "Line" [ref=e32]
+            - columnheader "Code" [ref=e33]
+        - rowgroup [ref=e34]:
+          - button "Line 1, commit 86da9a7 by Test Engineer, direct commit, moved from src/utils.ts" [ref=e35] [cursor=pointer]:
+            - gridcell "Direct commit" [ref=e36]:
+              - generic "Direct commit" [ref=e37]:
+                - img "Direct commit" [ref=e38]
+            - gridcell [ref=e40]
+            - gridcell "Code moved from src/utils.ts, low confidence" [ref=e41]:
+              - button "Code moved from src/utils.ts, low confidence" [disabled] [ref=e43]:
+                - img [ref=e44]
+            - gridcell "86da9a7" [ref=e46]:
+              - generic "86da9a7db9bb3045a35c87d4aaddbb44c204786d" [ref=e47]: 86da9a7
+            - gridcell "Test Engineer" [ref=e48]:
+              - generic "Test Engineer <test@example.com>" [ref=e49]: Test Engineer
+            - gridcell "Line 1" [ref=e50]: "1"
+            - gridcell "/**" [ref=e51]:
+              - generic [ref=e52]: /**
+          - button "Line 2, commit 86da9a7 by Test Engineer, direct commit" [ref=e53] [cursor=pointer]:
+            - gridcell [ref=e54]:
+              - img [ref=e56]
+            - gridcell [ref=e58]
+            - gridcell [ref=e59]
+            - gridcell [ref=e60]:
+              - generic [ref=e61]: 86da9a7
+            - gridcell [ref=e62]:
+              - generic [ref=e63]: Test Engineer
+            - gridcell "Line 2" [ref=e64]: "2"
+            - gridcell "* Utility functions for string manipulation" [ref=e65]:
+              - generic [ref=e66]: "* Utility functions for string manipulation"
+          - button "Line 3, commit 86da9a7 by Test Engineer, direct commit" [ref=e67] [cursor=pointer]:
+            - gridcell [ref=e68]:
+              - img [ref=e70]
+            - gridcell [ref=e72]
+            - gridcell [ref=e73]
+            - gridcell [ref=e74]:
+              - generic [ref=e75]: 86da9a7
+            - gridcell [ref=e76]:
+              - generic [ref=e77]: Test Engineer
+            - gridcell "Line 3" [ref=e78]: "3"
+            - gridcell "* This file will be renamed to helpers.ts" [ref=e79]:
+              - generic [ref=e80]: "* This file will be renamed to helpers.ts"
+          - button "Line 4, commit 86da9a7 by Test Engineer, direct commit" [ref=e81] [cursor=pointer]:
+            - gridcell [ref=e82]:
+              - img [ref=e84]
+            - gridcell [ref=e86]
+            - gridcell [ref=e87]
+            - gridcell [ref=e88]:
+              - generic [ref=e89]: 86da9a7
+            - gridcell [ref=e90]:
+              - generic [ref=e91]: Test Engineer
+            - gridcell "Line 4" [ref=e92]: "4"
+            - gridcell "*/" [ref=e93]:
+              - generic [ref=e94]: "*/"
+          - button "Line 5, commit 86da9a7 by Test Engineer, direct commit" [ref=e95] [cursor=pointer]:
+            - gridcell [ref=e96]:
+              - img [ref=e98]
+            - gridcell [ref=e100]
+            - gridcell [ref=e101]
+            - gridcell [ref=e102]:
+              - generic [ref=e103]: 86da9a7
+            - gridcell [ref=e104]:
+              - generic [ref=e105]: Test Engineer
+            - gridcell "Line 5" [ref=e106]: "5"
+            - gridcell [ref=e107]
+          - button "Line 6, commit 86da9a7 by Test Engineer, direct commit" [ref=e108] [cursor=pointer]:
+            - gridcell [ref=e109]:
+              - img [ref=e111]
+            - gridcell [ref=e113]
+            - gridcell [ref=e114]
+            - gridcell [ref=e115]:
+              - generic [ref=e116]: 86da9a7
+            - gridcell [ref=e117]:
+              - generic [ref=e118]: Test Engineer
+            - gridcell "Line 6" [ref=e119]: "6"
+            - gridcell "/**" [ref=e120]:
+              - generic [ref=e121]: /**
+          - button "Line 7, commit 86da9a7 by Test Engineer, direct commit" [ref=e122] [cursor=pointer]:
+            - gridcell [ref=e123]:
+              - img [ref=e125]
+            - gridcell [ref=e127]
+            - gridcell [ref=e128]
+            - gridcell [ref=e129]:
+              - generic [ref=e130]: 86da9a7
+            - gridcell [ref=e131]:
+              - generic [ref=e132]: Test Engineer
+            - gridcell "Line 7" [ref=e133]: "7"
+            - gridcell "* Capitalizes the first letter of a string" [ref=e134]:
+              - generic [ref=e135]: "* Capitalizes the first letter of a string"
+          - button "Line 8, commit 86da9a7 by Test Engineer, direct commit" [ref=e136] [cursor=pointer]:
+            - gridcell [ref=e137]:
+              - img [ref=e139]
+            - gridcell [ref=e141]
+            - gridcell [ref=e142]
+            - gridcell [ref=e143]:
+              - generic [ref=e144]: 86da9a7
+            - gridcell [ref=e145]:
+              - generic [ref=e146]: Test Engineer
+            - gridcell "Line 8" [ref=e147]: "8"
+            - gridcell "* @param str - Input string" [ref=e148]:
+              - generic [ref=e149]: "* @param str - Input string"
+          - button "Line 9, commit 86da9a7 by Test Engineer, direct commit" [ref=e150] [cursor=pointer]:
+            - gridcell [ref=e151]:
+              - img [ref=e153]
+            - gridcell [ref=e155]
+            - gridcell [ref=e156]
+            - gridcell [ref=e157]:
+              - generic [ref=e158]: 86da9a7
+            - gridcell [ref=e159]:
+              - generic [ref=e160]: Test Engineer
+            - gridcell "Line 9" [ref=e161]: "9"
+            - gridcell "* @returns String with first letter capitalized" [ref=e162]:
+              - generic [ref=e163]: "* @returns String with first letter capitalized"
+          - button "Line 10, commit 86da9a7 by Test Engineer, direct commit" [ref=e164] [cursor=pointer]:
+            - gridcell [ref=e165]:
+              - img [ref=e167]
+            - gridcell [ref=e169]
+            - gridcell [ref=e170]
+            - gridcell [ref=e171]:
+              - generic [ref=e172]: 86da9a7
+            - gridcell [ref=e173]:
+              - generic [ref=e174]: Test Engineer
+            - gridcell "Line 10" [ref=e175]: "10"
+            - gridcell "*/" [ref=e176]:
+              - generic [ref=e177]: "*/"
+          - button "Line 11, commit 86da9a7 by Test Engineer, direct commit" [ref=e178] [cursor=pointer]:
+            - gridcell [ref=e179]:
+              - img [ref=e181]
+            - gridcell [ref=e183]
+            - gridcell [ref=e184]
+            - gridcell [ref=e185]:
+              - generic [ref=e186]: 86da9a7
+            - gridcell [ref=e187]:
+              - generic [ref=e188]: Test Engineer
+            - gridcell "Line 11" [ref=e189]: "11"
+            - 'gridcell "export function capitalize(str: string): string {" [ref=e190]':
+              - generic [ref=e191]: "export function capitalize(str: string): string {"
+          - button "Line 12, commit 86da9a7 by Test Engineer, direct commit" [ref=e192] [cursor=pointer]:
+            - gridcell [ref=e193]:
+              - img [ref=e195]
+            - gridcell [ref=e197]
+            - gridcell [ref=e198]
+            - gridcell [ref=e199]:
+              - generic [ref=e200]: 86da9a7
+            - gridcell [ref=e201]:
+              - generic [ref=e202]: Test Engineer
+            - gridcell "Line 12" [ref=e203]: "12"
+            - gridcell "if (!str) return str;" [ref=e204]:
+              - generic [ref=e205]: if (!str) return str;
+          - button "Line 13, commit 86da9a7 by Test Engineer, direct commit" [ref=e206] [cursor=pointer]:
+            - gridcell [ref=e207]:
+              - img [ref=e209]
+            - gridcell [ref=e211]
+            - gridcell [ref=e212]
+            - gridcell [ref=e213]:
+              - generic [ref=e214]: 86da9a7
+            - gridcell [ref=e215]:
+              - generic [ref=e216]: Test Engineer
+            - gridcell "Line 13" [ref=e217]: "13"
+            - gridcell "return str.charAt(0).toUpperCase() + str.slice(1);" [ref=e218]:
+              - generic [ref=e219]: return str.charAt(0).toUpperCase() + str.slice(1);
+          - button "Line 14, commit 86da9a7 by Test Engineer, direct commit" [ref=e220] [cursor=pointer]:
+            - gridcell [ref=e221]:
+              - img [ref=e223]
+            - gridcell [ref=e225]
+            - gridcell [ref=e226]
+            - gridcell [ref=e227]:
+              - generic [ref=e228]: 86da9a7
+            - gridcell [ref=e229]:
+              - generic [ref=e230]: Test Engineer
+            - gridcell "Line 14" [ref=e231]: "14"
+            - 'gridcell "}" [ref=e232]':
+              - generic [ref=e233]: "}"
+          - button "Line 15, commit 86da9a7 by Test Engineer, direct commit" [ref=e234] [cursor=pointer]:
+            - gridcell [ref=e235]:
+              - img [ref=e237]
+            - gridcell [ref=e239]
+            - gridcell [ref=e240]
+            - gridcell [ref=e241]:
+              - generic [ref=e242]: 86da9a7
+            - gridcell [ref=e243]:
+              - generic [ref=e244]: Test Engineer
+            - gridcell "Line 15" [ref=e245]: "15"
+            - gridcell [ref=e246]
+          - button "Line 16, commit 86da9a7 by Test Engineer, direct commit" [ref=e247] [cursor=pointer]:
+            - gridcell [ref=e248]:
+              - img [ref=e250]
+            - gridcell [ref=e252]
+            - gridcell [ref=e253]
+            - gridcell [ref=e254]:
+              - generic [ref=e255]: 86da9a7
+            - gridcell [ref=e256]:
+              - generic [ref=e257]: Test Engineer
+            - gridcell "Line 16" [ref=e258]: "16"
+            - gridcell "/**" [ref=e259]:
+              - generic [ref=e260]: /**
+          - button "Line 17, commit 86da9a7 by Test Engineer, direct commit" [ref=e261] [cursor=pointer]:
+            - gridcell [ref=e262]:
+              - img [ref=e264]
+            - gridcell [ref=e266]
+            - gridcell [ref=e267]
+            - gridcell [ref=e268]:
+              - generic [ref=e269]: 86da9a7
+            - gridcell [ref=e270]:
+              - generic [ref=e271]: Test Engineer
+            - gridcell "Line 17" [ref=e272]: "17"
+            - gridcell "* Truncates a string to a maximum length" [ref=e273]:
+              - generic [ref=e274]: "* Truncates a string to a maximum length"
+          - button "Line 18, commit 86da9a7 by Test Engineer, direct commit" [ref=e275] [cursor=pointer]:
+            - gridcell [ref=e276]:
+              - img [ref=e278]
+            - gridcell [ref=e280]
+            - gridcell [ref=e281]
+            - gridcell [ref=e282]:
+              - generic [ref=e283]: 86da9a7
+            - gridcell [ref=e284]:
+              - generic [ref=e285]: Test Engineer
+            - gridcell "Line 18" [ref=e286]: "18"
+            - gridcell "* @param str - Input string" [ref=e287]:
+              - generic [ref=e288]: "* @param str - Input string"
+          - button "Line 19, commit 86da9a7 by Test Engineer, direct commit" [ref=e289] [cursor=pointer]:
+            - gridcell [ref=e290]:
+              - img [ref=e292]
+            - gridcell [ref=e294]
+            - gridcell [ref=e295]
+            - gridcell [ref=e296]:
+              - generic [ref=e297]: 86da9a7
+            - gridcell [ref=e298]:
+              - generic [ref=e299]: Test Engineer
+            - gridcell "Line 19" [ref=e300]: "19"
+            - gridcell "* @param maxLength - Maximum length" [ref=e301]:
+              - generic [ref=e302]: "* @param maxLength - Maximum length"
+          - button "Line 20, commit 86da9a7 by Test Engineer, direct commit" [ref=e303] [cursor=pointer]:
+            - gridcell [ref=e304]:
+              - img [ref=e306]
+            - gridcell [ref=e308]
+            - gridcell [ref=e309]
+            - gridcell [ref=e310]:
+              - generic [ref=e311]: 86da9a7
+            - gridcell [ref=e312]:
+              - generic [ref=e313]: Test Engineer
+            - gridcell "Line 20" [ref=e314]: "20"
+            - 'gridcell "* @param suffix - Suffix to add when truncated (default: ''...'')" [ref=e315]':
+              - generic [ref=e316]: "* @param suffix - Suffix to add when truncated (default: '...')"
+          - button "Line 21, commit 86da9a7 by Test Engineer, direct commit" [ref=e317] [cursor=pointer]:
+            - gridcell [ref=e318]:
+              - img [ref=e320]
+            - gridcell [ref=e322]
+            - gridcell [ref=e323]
+            - gridcell [ref=e324]:
+              - generic [ref=e325]: 86da9a7
+            - gridcell [ref=e326]:
+              - generic [ref=e327]: Test Engineer
+            - gridcell "Line 21" [ref=e328]: "21"
+            - gridcell "* @returns Truncated string" [ref=e329]:
+              - generic [ref=e330]: "* @returns Truncated string"
+          - button "Line 22, commit 86da9a7 by Test Engineer, direct commit" [ref=e331] [cursor=pointer]:
+            - gridcell [ref=e332]:
+              - img [ref=e334]
+            - gridcell [ref=e336]
+            - gridcell [ref=e337]
+            - gridcell [ref=e338]:
+              - generic [ref=e339]: 86da9a7
+            - gridcell [ref=e340]:
+              - generic [ref=e341]: Test Engineer
+            - gridcell "Line 22" [ref=e342]: "22"
+            - gridcell "*/" [ref=e343]:
+              - generic [ref=e344]: "*/"
+          - button "Line 23, commit 86da9a7 by Test Engineer, direct commit" [ref=e345] [cursor=pointer]:
+            - gridcell [ref=e346]:
+              - img [ref=e348]
+            - gridcell [ref=e350]
+            - gridcell [ref=e351]
+            - gridcell [ref=e352]:
+              - generic [ref=e353]: 86da9a7
+            - gridcell [ref=e354]:
+              - generic [ref=e355]: Test Engineer
+            - gridcell "Line 23" [ref=e356]: "23"
+            - 'gridcell "export function truncate(str: string, maxLength: number, suffix = ''...''): string {" [ref=e357]':
+              - generic [ref=e358]: "export function truncate(str: string, maxLength: number, suffix = '...'): string {"
+          - button "Line 24, commit 86da9a7 by Test Engineer, direct commit" [ref=e359] [cursor=pointer]:
+            - gridcell [ref=e360]:
+              - img [ref=e362]
+            - gridcell [ref=e364]
+            - gridcell [ref=e365]
+            - gridcell [ref=e366]:
+              - generic [ref=e367]: 86da9a7
+            - gridcell [ref=e368]:
+              - generic [ref=e369]: Test Engineer
+            - gridcell "Line 24" [ref=e370]: "24"
+            - gridcell "if (str.length <= maxLength) return str;" [ref=e371]:
+              - generic [ref=e372]: if (str.length <= maxLength) return str;
+          - button "Line 25, commit 86da9a7 by Test Engineer, direct commit" [ref=e373] [cursor=pointer]:
+            - gridcell [ref=e374]:
+              - img [ref=e376]
+            - gridcell [ref=e378]
+            - gridcell [ref=e379]
+            - gridcell [ref=e380]:
+              - generic [ref=e381]: 86da9a7
+            - gridcell [ref=e382]:
+              - generic [ref=e383]: Test Engineer
+            - gridcell "Line 25" [ref=e384]: "25"
+            - gridcell "return str.slice(0, maxLength - suffix.length) + suffix;" [ref=e385]:
+              - generic [ref=e386]: return str.slice(0, maxLength - suffix.length) + suffix;
+          - button "Line 26, commit 86da9a7 by Test Engineer, direct commit" [ref=e387] [cursor=pointer]:
+            - gridcell [ref=e388]:
+              - img [ref=e390]
+            - gridcell [ref=e392]
+            - gridcell [ref=e393]
+            - gridcell [ref=e394]:
+              - generic [ref=e395]: 86da9a7
+            - gridcell [ref=e396]:
+              - generic [ref=e397]: Test Engineer
+            - gridcell "Line 26" [ref=e398]: "26"
+            - 'gridcell "}" [ref=e399]':
+              - generic [ref=e400]: "}"
+          - button "Line 27, commit 86da9a7 by Test Engineer, direct commit" [ref=e401] [cursor=pointer]:
+            - gridcell [ref=e402]:
+              - img [ref=e404]
+            - gridcell [ref=e406]
+            - gridcell [ref=e407]
+            - gridcell [ref=e408]:
+              - generic [ref=e409]: 86da9a7
+            - gridcell [ref=e410]:
+              - generic [ref=e411]: Test Engineer
+            - gridcell "Line 27" [ref=e412]: "27"
+            - gridcell [ref=e413]
+          - button "Line 28, commit 86da9a7 by Test Engineer, direct commit" [ref=e414] [cursor=pointer]:
+            - gridcell [ref=e415]:
+              - img [ref=e417]
+            - gridcell [ref=e419]
+            - gridcell [ref=e420]
+            - gridcell [ref=e421]:
+              - generic [ref=e422]: 86da9a7
+            - gridcell [ref=e423]:
+              - generic [ref=e424]: Test Engineer
+            - gridcell "Line 28" [ref=e425]: "28"
+            - gridcell "/**" [ref=e426]:
+              - generic [ref=e427]: /**
+          - button "Line 29, commit 86da9a7 by Test Engineer, direct commit" [ref=e428] [cursor=pointer]:
+            - gridcell [ref=e429]:
+              - img [ref=e431]
+            - gridcell [ref=e433]
+            - gridcell [ref=e434]
+            - gridcell [ref=e435]:
+              - generic [ref=e436]: 86da9a7
+            - gridcell [ref=e437]:
+              - generic [ref=e438]: Test Engineer
+            - gridcell "Line 29" [ref=e439]: "29"
+            - gridcell "* Converts a string to kebab-case" [ref=e440]:
+              - generic [ref=e441]: "* Converts a string to kebab-case"
+          - button "Line 30, commit 86da9a7 by Test Engineer, direct commit" [ref=e442] [cursor=pointer]:
+            - gridcell [ref=e443]:
+              - img [ref=e445]
+            - gridcell [ref=e447]
+            - gridcell [ref=e448]
+            - gridcell [ref=e449]:
+              - generic [ref=e450]: 86da9a7
+            - gridcell [ref=e451]:
+              - generic [ref=e452]: Test Engineer
+            - gridcell "Line 30" [ref=e453]: "30"
+            - gridcell "* @param str - Input string" [ref=e454]:
+              - generic [ref=e455]: "* @param str - Input string"
+          - button "Line 31, commit 86da9a7 by Test Engineer, direct commit" [ref=e456] [cursor=pointer]:
+            - gridcell [ref=e457]:
+              - img [ref=e459]
+            - gridcell [ref=e461]
+            - gridcell [ref=e462]
+            - gridcell [ref=e463]:
+              - generic [ref=e464]: 86da9a7
+            - gridcell [ref=e465]:
+              - generic [ref=e466]: Test Engineer
+            - gridcell "Line 31" [ref=e467]: "31"
+            - gridcell "* @returns Kebab-cased string" [ref=e468]:
+              - generic [ref=e469]: "* @returns Kebab-cased string"
+          - button "Line 32, commit 86da9a7 by Test Engineer, direct commit" [ref=e470] [cursor=pointer]:
+            - gridcell [ref=e471]:
+              - img [ref=e473]
+            - gridcell [ref=e475]
+            - gridcell [ref=e476]
+            - gridcell [ref=e477]:
+              - generic [ref=e478]: 86da9a7
+            - gridcell [ref=e479]:
+              - generic [ref=e480]: Test Engineer
+            - gridcell "Line 32" [ref=e481]: "32"
+            - gridcell "*/" [ref=e482]:
+              - generic [ref=e483]: "*/"
+          - button "Line 33, commit 86da9a7 by Test Engineer, direct commit" [ref=e484] [cursor=pointer]:
+            - gridcell [ref=e485]:
+              - img [ref=e487]
+            - gridcell [ref=e489]
+            - gridcell [ref=e490]
+            - gridcell [ref=e491]:
+              - generic [ref=e492]: 86da9a7
+            - gridcell [ref=e493]:
+              - generic [ref=e494]: Test Engineer
+            - gridcell "Line 33" [ref=e495]: "33"
+            - 'gridcell "export function toKebabCase(str: string): string {" [ref=e496]':
+              - generic [ref=e497]: "export function toKebabCase(str: string): string {"
+          - button "Line 34, commit 86da9a7 by Test Engineer, direct commit" [ref=e498] [cursor=pointer]:
+            - gridcell [ref=e499]:
+              - img [ref=e501]
+            - gridcell [ref=e503]
+            - gridcell [ref=e504]
+            - gridcell [ref=e505]:
+              - generic [ref=e506]: 86da9a7
+            - gridcell [ref=e507]:
+              - generic [ref=e508]: Test Engineer
+            - gridcell "Line 34" [ref=e509]: "34"
+            - gridcell "return str" [ref=e510]:
+              - generic [ref=e511]: return str
+          - button "Line 35, commit 86da9a7 by Test Engineer, direct commit" [ref=e512] [cursor=pointer]:
+            - gridcell [ref=e513]:
+              - img [ref=e515]
+            - gridcell [ref=e517]
+            - gridcell [ref=e518]
+            - gridcell [ref=e519]:
+              - generic [ref=e520]: 86da9a7
+            - gridcell [ref=e521]:
+              - generic [ref=e522]: Test Engineer
+            - gridcell "Line 35" [ref=e523]: "35"
+            - gridcell ".replace(/([a-z])([A-Z])/g, '$1-$2')" [ref=e524]:
+              - generic [ref=e525]: .replace(/([a-z])([A-Z])/g, '$1-$2')
+          - button "Line 36, commit 86da9a7 by Test Engineer, direct commit" [ref=e526] [cursor=pointer]:
+            - gridcell [ref=e527]:
+              - img [ref=e529]
+            - gridcell [ref=e531]
+            - gridcell [ref=e532]
+            - gridcell [ref=e533]:
+              - generic [ref=e534]: 86da9a7
+            - gridcell [ref=e535]:
+              - generic [ref=e536]: Test Engineer
+            - gridcell "Line 36" [ref=e537]: "36"
+            - gridcell ".replace(/[\\s_]+/g, '-')" [ref=e538]:
+              - generic [ref=e539]: .replace(/[\s_]+/g, '-')
+          - button "Line 37, commit 86da9a7 by Test Engineer, direct commit" [ref=e540] [cursor=pointer]:
+            - gridcell [ref=e541]:
+              - img [ref=e543]
+            - gridcell [ref=e545]
+            - gridcell [ref=e546]
+            - gridcell [ref=e547]:
+              - generic [ref=e548]: 86da9a7
+            - gridcell [ref=e549]:
+              - generic [ref=e550]: Test Engineer
+            - gridcell "Line 37" [ref=e551]: "37"
+            - gridcell ".toLowerCase();" [ref=e552]:
+              - generic [ref=e553]: .toLowerCase();
+          - button "Line 38, commit 86da9a7 by Test Engineer, direct commit" [ref=e554] [cursor=pointer]:
+            - gridcell [ref=e555]:
+              - img [ref=e557]
+            - gridcell [ref=e559]
+            - gridcell [ref=e560]
+            - gridcell [ref=e561]:
+              - generic [ref=e562]: 86da9a7
+            - gridcell [ref=e563]:
+              - generic [ref=e564]: Test Engineer
+            - gridcell "Line 38" [ref=e565]: "38"
+            - 'gridcell "}" [ref=e566]':
+              - generic [ref=e567]: "}"
+      - button "Show file history" [ref=e569]:
+        - img [ref=e570]
+        - text: Show file history
+      - link "← Back to Home" [ref=e572] [cursor=pointer]:
+        - /url: /
+      - dialog [ref=e573]:
+        - generic [ref=e575]:
+          - heading [level=2] [ref=e576]: Commit Details
+          - button [ref=e577]:
+            - img [ref=e578]
+  - button "Open Next.js Dev Tools" [ref=e586] [cursor=pointer]:
+    - img [ref=e587]
+  - alert [ref=e590]
+```

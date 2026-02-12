@@ -1,0 +1,57 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e1]:
+  - generic [ref=e2]:
+    - navigation [ref=e3]:
+      - link "Settings" [ref=e4] [cursor=pointer]:
+        - /url: /settings
+        - img [ref=e5]
+        - text: Settings
+    - main [ref=e8]:
+      - generic [ref=e9]:
+        - heading "Git Blame Viewer" [level=1] [ref=e10]
+        - paragraph [ref=e11]: Enter a repository path and file path to view blame information.
+      - generic [ref=e12]:
+        - generic [ref=e13]:
+          - generic [ref=e14]: Repository Path
+          - generic [ref=e15]:
+            - textbox "Repository Path" [ref=e16]:
+              - /placeholder: /path/to/repo
+            - button "Browse for repository" [ref=e17]:
+              - img [ref=e18]
+        - generic [ref=e20]:
+          - generic [ref=e21]: File Path
+          - generic [ref=e22]:
+            - textbox "File Path" [ref=e23]:
+              - /placeholder: src/file.ts
+            - button "Browse for file" [ref=e24]:
+              - img [ref=e25]
+        - button "View Blame" [ref=e28]
+      - dialog "Select Repository" [ref=e29]:
+        - generic [active] [ref=e31]:
+          - generic [ref=e32]:
+            - heading "Select Repository" [level=2] [ref=e33]
+            - button "Close file browser" [ref=e34]:
+              - img [ref=e35]
+          - navigation "File browser navigation" [ref=e41]:
+            - list [ref=e42]:
+              - listitem [ref=e43]:
+                - generic / [ref=e44]
+          - alert [ref=e46]:
+            - img [ref=e47]
+            - heading "Not Found" [level=3] [ref=e50]
+            - paragraph [ref=e51]: The directory or file could not be found.
+            - paragraph [ref=e52]: It may have been moved or deleted. Try navigating to a parent directory.
+            - button "Try Again" [ref=e53]:
+              - img [ref=e54]
+              - text: Try Again
+          - generic [ref=e59]:
+            - generic [ref=e61]: 0 items
+            - generic [ref=e62]:
+              - button "Select This Folder" [ref=e63]
+              - button "Cancel" [ref=e64]
+  - button "Open Next.js Dev Tools" [ref=e70] [cursor=pointer]:
+    - img [ref=e71]
+  - alert [ref=e74]
+```

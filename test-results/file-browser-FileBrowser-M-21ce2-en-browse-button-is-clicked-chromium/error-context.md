@@ -1,0 +1,131 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e1]:
+  - generic [ref=e2]:
+    - navigation [ref=e3]:
+      - link "Settings" [ref=e4] [cursor=pointer]:
+        - /url: /settings
+        - img [ref=e5]
+        - text: Settings
+    - main [ref=e8]:
+      - generic [ref=e9]:
+        - heading "Git Blame Viewer" [level=1] [ref=e10]
+        - paragraph [ref=e11]: Enter a repository path and file path to view blame information.
+      - generic [ref=e12]:
+        - generic [ref=e13]:
+          - generic [ref=e14]: Repository Path
+          - generic [ref=e15]:
+            - textbox "Repository Path" [ref=e16]:
+              - /placeholder: /path/to/repo
+            - button "Browse for repository" [ref=e17]:
+              - img [ref=e18]
+        - generic [ref=e20]:
+          - generic [ref=e21]: File Path
+          - generic [ref=e22]:
+            - textbox "File Path" [ref=e23]:
+              - /placeholder: src/file.ts
+            - button "Browse for file" [ref=e24]:
+              - img [ref=e25]
+        - button "View Blame" [ref=e28]
+      - dialog "Select Repository" [ref=e29]:
+        - generic [active] [ref=e31]:
+          - generic [ref=e32]:
+            - heading "Select Repository" [level=2] [ref=e33]
+            - button "Close file browser" [ref=e34]:
+              - img [ref=e35]
+          - generic [ref=e39]:
+            - navigation "File browser navigation" [ref=e41]:
+              - list [ref=e42]:
+                - listitem [ref=e43]:
+                  - generic / [ref=e44]
+            - generic [ref=e46]:
+              - generic:
+                - img
+              - textbox "Search files" [ref=e47]:
+                - /placeholder: Filter files...
+          - listbox "Files and directories" [ref=e49]:
+            - 'option "Directory: boot" [ref=e50]':
+              - img [ref=e51]
+              - img [ref=e53]
+              - generic [ref=e55]: boot
+              - img [ref=e56]
+            - 'option "Directory: dev" [ref=e58]':
+              - img [ref=e59]
+              - img [ref=e61]
+              - generic [ref=e63]: dev
+              - img [ref=e64]
+            - 'option "Directory: etc" [ref=e66]':
+              - img [ref=e67]
+              - img [ref=e69]
+              - generic [ref=e71]: etc
+              - img [ref=e72]
+            - 'option "Directory: home" [ref=e74]':
+              - img [ref=e75]
+              - img [ref=e77]
+              - generic [ref=e79]: home
+              - img [ref=e80]
+            - 'option "Directory: media" [ref=e82]':
+              - img [ref=e83]
+              - img [ref=e85]
+              - generic [ref=e87]: media
+              - img [ref=e88]
+            - 'option "Directory: mnt" [ref=e90]':
+              - img [ref=e91]
+              - img [ref=e93]
+              - generic [ref=e95]: mnt
+              - img [ref=e96]
+            - 'option "Directory: opt" [ref=e98]':
+              - img [ref=e99]
+              - img [ref=e101]
+              - generic [ref=e103]: opt
+              - img [ref=e104]
+            - 'option "Directory: proc" [ref=e106]':
+              - img [ref=e107]
+              - img [ref=e109]
+              - generic [ref=e111]: proc
+              - img [ref=e112]
+            - 'option "Directory: root" [ref=e114]':
+              - img [ref=e115]
+              - img [ref=e117]
+              - generic [ref=e119]: root
+              - img [ref=e120]
+            - 'option "Directory: run" [ref=e122]':
+              - img [ref=e123]
+              - img [ref=e125]
+              - generic [ref=e127]: run
+              - img [ref=e128]
+            - 'option "Directory: srv" [ref=e130]':
+              - img [ref=e131]
+              - img [ref=e133]
+              - generic [ref=e135]: srv
+              - img [ref=e136]
+            - 'option "Directory: sys" [ref=e138]':
+              - img [ref=e139]
+              - img [ref=e141]
+              - generic [ref=e143]: sys
+              - img [ref=e144]
+            - 'option "Directory: tmp" [ref=e146]':
+              - img [ref=e147]
+              - img [ref=e149]
+              - generic [ref=e151]: tmp
+              - img [ref=e152]
+            - 'option "Directory: usr" [ref=e154]':
+              - img [ref=e155]
+              - img [ref=e157]
+              - generic [ref=e159]: usr
+              - img [ref=e160]
+            - 'option "Directory: var" [ref=e162]':
+              - img [ref=e163]
+              - img [ref=e165]
+              - generic [ref=e167]: var
+              - img [ref=e168]
+          - generic [ref=e170]:
+            - generic [ref=e172]: 15 items
+            - generic [ref=e173]:
+              - button "Select This Folder" [ref=e174]
+              - button "Cancel" [ref=e175]
+  - button "Open Next.js Dev Tools" [ref=e181] [cursor=pointer]:
+    - img [ref=e182]
+  - alert [ref=e185]
+```

@@ -1,0 +1,61 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e1]:
+  - generic [ref=e2]:
+    - navigation [ref=e3]:
+      - link "Settings" [ref=e4] [cursor=pointer]:
+        - /url: /settings
+        - img [ref=e5]
+        - text: Settings
+    - main [ref=e8]:
+      - generic [ref=e9]:
+        - heading "Git Blame Viewer" [level=1] [ref=e10]
+        - paragraph [ref=e11]: Enter a repository path and file path to view blame information.
+      - generic [ref=e12]:
+        - generic [ref=e13]:
+          - generic [ref=e14]: Repository Path
+          - generic [ref=e15]:
+            - textbox "Repository Path" [ref=e16]:
+              - /placeholder: /path/to/repo
+            - button "Browse for repository" [ref=e17]:
+              - img [ref=e18]
+        - generic [ref=e20]:
+          - generic [ref=e21]: File Path
+          - generic [ref=e22]:
+            - textbox "File Path" [ref=e23]:
+              - /placeholder: src/file.ts
+            - button "Browse for file" [ref=e24]:
+              - img [ref=e25]
+        - button "View Blame" [ref=e28]
+      - dialog "Select Repository" [ref=e29]:
+        - generic [active] [ref=e31]:
+          - generic [ref=e32]:
+            - heading "Select Repository" [level=2] [ref=e33]
+            - button "Close file browser" [ref=e34]:
+              - img [ref=e35]
+          - generic [ref=e39]:
+            - navigation "File browser navigation" [ref=e41]:
+              - list [ref=e42]:
+                - listitem [ref=e43]:
+                  - generic / [ref=e44]
+            - generic [ref=e46]:
+              - generic:
+                - img
+              - textbox "Search files" [ref=e47]:
+                - /placeholder: Filter files...
+          - listbox "Files and directories" [ref=e49]:
+            - 'option "Directory: root" [ref=e50]':
+              - img [ref=e51]
+              - img [ref=e53]
+              - generic [ref=e55]: root
+              - img [ref=e56]
+          - generic [ref=e58]:
+            - generic [ref=e60]: 1 item
+            - generic [ref=e61]:
+              - button "Select This Folder" [ref=e62]
+              - button "Cancel" [ref=e63]
+  - button "Open Next.js Dev Tools" [ref=e69] [cursor=pointer]:
+    - img [ref=e70]
+  - alert [ref=e73]
+```

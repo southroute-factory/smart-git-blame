@@ -202,7 +202,12 @@ export function validateDirectoryPath(dirPath: string): void {
  * @throws PathValidationError if path normalization reveals traversal
  */
 export function normalizePath(dirPath: string): string {
-  const normalized = path.normalize(dirPath);
+  let normalized = path.normalize(dirPath);
+
+  // Remove trailing slash (except for root path)
+  if (normalized.length > 1 && normalized.endsWith("/")) {
+    normalized = normalized.slice(0, -1);
+  }
 
   // Check if normalization changed the path in a suspicious way
   // (e.g., /path/to/dir/../../../etc would normalize to /etc)

@@ -1,0 +1,77 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e1]:
+  - generic [ref=e2]:
+    - navigation [ref=e3]:
+      - link "Settings" [ref=e4] [cursor=pointer]:
+        - /url: /settings
+        - img [ref=e5]
+        - text: Settings
+    - main [ref=e8]:
+      - generic [ref=e9]:
+        - heading "Git Blame Viewer" [level=1] [ref=e10]
+        - paragraph [ref=e11]: Enter a repository path and file path to view blame information.
+      - generic [ref=e12]:
+        - generic [ref=e13]:
+          - generic [ref=e14]: Repository Path
+          - generic [ref=e15]:
+            - textbox "Repository Path" [ref=e16]:
+              - /placeholder: /path/to/repo
+            - button "Browse for repository" [ref=e17]:
+              - img [ref=e18]
+        - generic [ref=e20]:
+          - generic [ref=e21]: File Path
+          - generic [ref=e22]:
+            - textbox "File Path" [ref=e23]:
+              - /placeholder: src/file.ts
+            - button "Browse for file" [ref=e24]:
+              - img [ref=e25]
+        - button "View Blame" [ref=e28]
+      - dialog "Select Repository" [ref=e29]:
+        - generic [ref=e31]:
+          - generic [ref=e32]:
+            - heading "Select Repository" [level=2] [ref=e33]
+            - button "Close file browser" [ref=e34]:
+              - img [ref=e35]
+          - generic [ref=e39]:
+            - navigation "File browser navigation" [ref=e41]:
+              - list [ref=e42]:
+                - listitem [ref=e43]:
+                  - button / [ref=e44]
+                - listitem [ref=e45]:
+                  - generic [ref=e46]: /
+                  - button "root" [ref=e47]
+                - listitem [ref=e48]:
+                  - generic [ref=e49]: /
+                  - button "web-app" [ref=e50]
+                - listitem [ref=e51]:
+                  - generic [ref=e52]: /
+                  - generic "src" [ref=e53]
+            - generic [ref=e55]:
+              - generic:
+                - img
+              - textbox "Search files" [ref=e56]:
+                - /placeholder: Filter files...
+          - listbox "Files and directories" [ref=e58]:
+            - 'option "File: index.ts, 234 B" [active] [ref=e59]':
+              - img [ref=e60]
+              - generic [ref=e63]: index.ts
+              - generic [ref=e64]: 234 B
+            - 'option "File: main.ts, 567 B" [ref=e65]':
+              - img [ref=e66]
+              - generic [ref=e69]: main.ts
+              - generic [ref=e70]: 567 B
+          - generic [ref=e71]:
+            - generic [ref=e72]:
+              - generic [ref=e73]:
+                - img [ref=e74]
+                - text: Git repository
+              - generic [ref=e76]: 2 items
+            - generic [ref=e77]:
+              - button "Select This Folder" [ref=e78]
+              - button "Cancel" [ref=e79]
+  - button "Open Next.js Dev Tools" [ref=e85] [cursor=pointer]:
+    - img [ref=e86]
+  - alert [ref=e89]
+```

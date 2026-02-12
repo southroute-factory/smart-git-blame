@@ -1,0 +1,310 @@
+# Page snapshot
+
+```yaml
+- generic [active] [ref=e1]:
+  - main [ref=e3]:
+    - generic [ref=e4]:
+      - generic [ref=e5]:
+        - heading "Blame View" [level=1] [ref=e6]
+        - generic [ref=e7]:
+          - paragraph [ref=e8]: "Repository: /root/web-app/test-fixtures/sample-repo"
+          - paragraph [ref=e9]: "File: src/example.ts"
+      - grid "Blame view for src/example.ts" [ref=e12]:
+        - rowgroup [ref=e13]:
+          - row "Type Movement Cross-file origin Commit Author Line Code" [ref=e14]:
+            - columnheader "Type" [ref=e15]
+            - columnheader "Movement" [ref=e16]
+            - columnheader "Cross-file origin" [ref=e17]
+            - columnheader "Commit" [ref=e18]
+            - columnheader "Author" [ref=e19]
+            - columnheader "Line" [ref=e20]
+            - columnheader "Code" [ref=e21]
+        - rowgroup [ref=e22]:
+          - button "Line 1, commit 32f2f38 by Alice Developer, direct commit" [ref=e23] [cursor=pointer]:
+            - gridcell "Direct commit" [ref=e24]:
+              - generic "Direct commit" [ref=e25]:
+                - img "Direct commit" [ref=e26]
+            - gridcell [ref=e28]
+            - gridcell [ref=e29]
+            - gridcell "32f2f38" [ref=e30]:
+              - generic "32f2f383ce79f51e7faa7b18cee7a52cd194941c" [ref=e31]: 32f2f38
+            - gridcell "Alice Developer" [ref=e32]:
+              - generic "Alice Developer <alice@example.com>" [ref=e33]: Alice Developer
+            - gridcell "Line 1" [ref=e34]: "1"
+            - gridcell "/**" [ref=e35]:
+              - generic [ref=e36]: /**
+          - button "Line 2, commit 32f2f38 by Alice Developer, direct commit" [ref=e37] [cursor=pointer]:
+            - gridcell [ref=e38]:
+              - img [ref=e40]
+            - gridcell [ref=e42]
+            - gridcell [ref=e43]
+            - gridcell [ref=e44]:
+              - generic [ref=e45]: 32f2f38
+            - gridcell [ref=e46]:
+              - generic [ref=e47]: Alice Developer
+            - gridcell "Line 2" [ref=e48]: "2"
+            - gridcell "* Example utility functions for testing git blame" [ref=e49]:
+              - generic [ref=e50]: "* Example utility functions for testing git blame"
+          - button "Line 3, commit 32f2f38 by Alice Developer, direct commit" [ref=e51] [cursor=pointer]:
+            - gridcell [ref=e52]:
+              - img [ref=e54]
+            - gridcell [ref=e56]
+            - gridcell [ref=e57]
+            - gridcell [ref=e58]:
+              - generic [ref=e59]: 32f2f38
+            - gridcell [ref=e60]:
+              - generic [ref=e61]: Alice Developer
+            - gridcell "Line 3" [ref=e62]: "3"
+            - gridcell "*/" [ref=e63]:
+              - generic [ref=e64]: "*/"
+          - button "Line 4, commit 32f2f38 by Alice Developer, direct commit" [ref=e65] [cursor=pointer]:
+            - gridcell [ref=e66]:
+              - img [ref=e68]
+            - gridcell [ref=e70]
+            - gridcell [ref=e71]
+            - gridcell [ref=e72]:
+              - generic [ref=e73]: 32f2f38
+            - gridcell [ref=e74]:
+              - generic [ref=e75]: Alice Developer
+            - gridcell "Line 4" [ref=e76]: "4"
+            - gridcell [ref=e77]
+          - button "Line 5, commit 32f2f38 by Alice Developer, direct commit" [ref=e78] [cursor=pointer]:
+            - gridcell [ref=e79]:
+              - img [ref=e81]
+            - gridcell [ref=e83]
+            - gridcell [ref=e84]
+            - gridcell [ref=e85]:
+              - generic [ref=e86]: 32f2f38
+            - gridcell [ref=e87]:
+              - generic [ref=e88]: Alice Developer
+            - gridcell "Line 5" [ref=e89]: "5"
+            - 'gridcell "export function multiply(a: number, b: number): number {" [ref=e90]':
+              - generic [ref=e91]: "export function multiply(a: number, b: number): number {"
+          - button "Line 6, commit 32f2f38 by Alice Developer, direct commit" [ref=e92] [cursor=pointer]:
+            - gridcell [ref=e93]:
+              - img [ref=e95]
+            - gridcell [ref=e97]
+            - gridcell [ref=e98]
+            - gridcell [ref=e99]:
+              - generic [ref=e100]: 32f2f38
+            - gridcell [ref=e101]:
+              - generic [ref=e102]: Alice Developer
+            - gridcell "Line 6" [ref=e103]: "6"
+            - gridcell "return a * b;" [ref=e104]:
+              - generic [ref=e105]: return a * b;
+          - button "Line 7, commit 32f2f38 by Alice Developer, direct commit" [ref=e106] [cursor=pointer]:
+            - gridcell [ref=e107]:
+              - img [ref=e109]
+            - gridcell [ref=e111]
+            - gridcell [ref=e112]
+            - gridcell [ref=e113]:
+              - generic [ref=e114]: 32f2f38
+            - gridcell [ref=e115]:
+              - generic [ref=e116]: Alice Developer
+            - gridcell "Line 7" [ref=e117]: "7"
+            - 'gridcell "}" [ref=e118]':
+              - generic [ref=e119]: "}"
+          - button "Line 8, commit cd36886 by Bob Engineer, direct commit" [ref=e120] [cursor=pointer]:
+            - gridcell "Direct commit" [ref=e121]:
+              - generic "Direct commit" [ref=e122]:
+                - img "Direct commit" [ref=e123]
+            - gridcell [ref=e125]
+            - gridcell [ref=e126]
+            - gridcell "cd36886" [ref=e127]:
+              - generic "cd36886384ce625c19d5508b43a7a651ebbe55e8" [ref=e128]: cd36886
+            - gridcell "Bob Engineer" [ref=e129]:
+              - generic "Bob Engineer <bob@example.com>" [ref=e130]: Bob Engineer
+            - gridcell "Line 8" [ref=e131]: "8"
+            - gridcell [ref=e132]
+          - button "Line 9, commit cd36886 by Bob Engineer, direct commit" [ref=e133] [cursor=pointer]:
+            - gridcell [ref=e134]:
+              - img [ref=e136]
+            - gridcell [ref=e138]
+            - gridcell [ref=e139]
+            - gridcell [ref=e140]:
+              - generic [ref=e141]: cd36886
+            - gridcell [ref=e142]:
+              - generic [ref=e143]: Bob Engineer
+            - gridcell "Line 9" [ref=e144]: "9"
+            - 'gridcell "export function subtract(a: number, b: number): number {" [ref=e145]':
+              - generic [ref=e146]: "export function subtract(a: number, b: number): number {"
+          - button "Line 10, commit cd36886 by Bob Engineer, direct commit" [ref=e147] [cursor=pointer]:
+            - gridcell [ref=e148]:
+              - img [ref=e150]
+            - gridcell [ref=e152]
+            - gridcell [ref=e153]
+            - gridcell [ref=e154]:
+              - generic [ref=e155]: cd36886
+            - gridcell [ref=e156]:
+              - generic [ref=e157]: Bob Engineer
+            - gridcell "Line 10" [ref=e158]: "10"
+            - gridcell "return a - b;" [ref=e159]:
+              - generic [ref=e160]: return a - b;
+          - button "Line 11, commit cd36886 by Bob Engineer, direct commit" [ref=e161] [cursor=pointer]:
+            - gridcell [ref=e162]:
+              - img [ref=e164]
+            - gridcell [ref=e166]
+            - gridcell [ref=e167]
+            - gridcell [ref=e168]:
+              - generic [ref=e169]: cd36886
+            - gridcell [ref=e170]:
+              - generic [ref=e171]: Bob Engineer
+            - gridcell "Line 11" [ref=e172]: "11"
+            - 'gridcell "}" [ref=e173]':
+              - generic [ref=e174]: "}"
+          - button "Line 12, commit 2d766cb by Charlie Coder" [ref=e175] [cursor=pointer]:
+            - gridcell "Part of merge" [ref=e176]:
+              - generic "Part of merge" [ref=e177]:
+                - img "Part of merge" [ref=e178]
+            - gridcell [ref=e180]
+            - gridcell [ref=e181]
+            - gridcell "2d766cb" [ref=e182]:
+              - generic "2d766cb17eedfaf87f5b5f62e76ec220c48d0b6a" [ref=e183]: 2d766cb
+            - gridcell "Charlie Coder" [ref=e184]:
+              - generic "Charlie Coder <charlie@example.com>" [ref=e185]: Charlie Coder
+            - gridcell "Line 12" [ref=e186]: "12"
+            - gridcell [ref=e187]
+          - button "Line 13, commit 2d766cb by Charlie Coder" [ref=e188] [cursor=pointer]:
+            - gridcell [ref=e189]:
+              - img [ref=e191]
+            - gridcell [ref=e193]
+            - gridcell [ref=e194]
+            - gridcell [ref=e195]:
+              - generic [ref=e196]: 2d766cb
+            - gridcell [ref=e197]:
+              - generic [ref=e198]: Charlie Coder
+            - gridcell "Line 13" [ref=e199]: "13"
+            - 'gridcell "export function divide(a: number, b: number): number {" [ref=e200]':
+              - generic [ref=e201]: "export function divide(a: number, b: number): number {"
+          - button "Line 14, commit 2d766cb by Charlie Coder" [ref=e202] [cursor=pointer]:
+            - gridcell [ref=e203]:
+              - img [ref=e205]
+            - gridcell [ref=e207]
+            - gridcell [ref=e208]
+            - gridcell [ref=e209]:
+              - generic [ref=e210]: 2d766cb
+            - gridcell [ref=e211]:
+              - generic [ref=e212]: Charlie Coder
+            - gridcell "Line 14" [ref=e213]: "14"
+            - 'gridcell "if (b === 0) {" [ref=e214]':
+              - generic [ref=e215]: "if (b === 0) {"
+          - button "Line 15, commit 2d766cb by Charlie Coder" [ref=e216] [cursor=pointer]:
+            - gridcell [ref=e217]:
+              - img [ref=e219]
+            - gridcell [ref=e221]
+            - gridcell [ref=e222]
+            - gridcell [ref=e223]:
+              - generic [ref=e224]: 2d766cb
+            - gridcell [ref=e225]:
+              - generic [ref=e226]: Charlie Coder
+            - gridcell "Line 15" [ref=e227]: "15"
+            - gridcell "throw new Error('Cannot divide by zero');" [ref=e228]:
+              - generic [ref=e229]: throw new Error('Cannot divide by zero');
+          - button "Line 16, commit 2d766cb by Charlie Coder" [ref=e230] [cursor=pointer]:
+            - gridcell [ref=e231]:
+              - img [ref=e233]
+            - gridcell [ref=e235]
+            - gridcell [ref=e236]
+            - gridcell [ref=e237]:
+              - generic [ref=e238]: 2d766cb
+            - gridcell [ref=e239]:
+              - generic [ref=e240]: Charlie Coder
+            - gridcell "Line 16" [ref=e241]: "16"
+            - 'gridcell "}" [ref=e242]':
+              - generic [ref=e243]: "}"
+          - button "Line 17, commit 2d766cb by Charlie Coder" [ref=e244] [cursor=pointer]:
+            - gridcell [ref=e245]:
+              - img [ref=e247]
+            - gridcell [ref=e249]
+            - gridcell [ref=e250]
+            - gridcell [ref=e251]:
+              - generic [ref=e252]: 2d766cb
+            - gridcell [ref=e253]:
+              - generic [ref=e254]: Charlie Coder
+            - gridcell "Line 17" [ref=e255]: "17"
+            - gridcell "return a / b;" [ref=e256]:
+              - generic [ref=e257]: return a / b;
+          - button "Line 18, commit 2d766cb by Charlie Coder" [ref=e258] [cursor=pointer]:
+            - gridcell [ref=e259]:
+              - img [ref=e261]
+            - gridcell [ref=e263]
+            - gridcell [ref=e264]
+            - gridcell [ref=e265]:
+              - generic [ref=e266]: 2d766cb
+            - gridcell [ref=e267]:
+              - generic [ref=e268]: Charlie Coder
+            - gridcell "Line 18" [ref=e269]: "18"
+            - 'gridcell "}" [ref=e270]':
+              - generic [ref=e271]: "}"
+          - button "Line 19, commit 248e633 by Test Engineer, direct commit" [ref=e272] [cursor=pointer]:
+            - gridcell "Direct commit" [ref=e273]:
+              - generic "Direct commit" [ref=e274]:
+                - img "Direct commit" [ref=e275]
+            - gridcell [ref=e277]
+            - gridcell [ref=e278]
+            - gridcell "248e633" [ref=e279]:
+              - generic "248e63384550e939d27e7d7d9f5b5573a8e13169" [ref=e280]: "248e633"
+            - gridcell "Test Engineer" [ref=e281]:
+              - generic "Test Engineer <test@example.com>" [ref=e282]: Test Engineer
+            - gridcell "Line 19" [ref=e283]: "19"
+            - gridcell [ref=e284]
+          - button "Line 20, commit 248e633 by Test Engineer, direct commit" [ref=e285] [cursor=pointer]:
+            - gridcell [ref=e286]:
+              - img [ref=e288]
+            - gridcell [ref=e290]
+            - gridcell [ref=e291]
+            - gridcell [ref=e292]:
+              - generic [ref=e293]: "248e633"
+            - gridcell [ref=e294]:
+              - generic [ref=e295]: Test Engineer
+            - gridcell "Line 20" [ref=e296]: "20"
+            - gridcell "// Moved add function to the end for organizational purposes" [ref=e297]:
+              - generic [ref=e298]: // Moved add function to the end for organizational purposes
+          - button "Line 21, commit 32f2f38 by Alice Developer, direct commit" [ref=e299] [cursor=pointer]:
+            - gridcell "Direct commit" [ref=e300]:
+              - generic "Direct commit" [ref=e301]:
+                - img "Direct commit" [ref=e302]
+            - gridcell [ref=e304]
+            - gridcell [ref=e305]
+            - gridcell "32f2f38" [ref=e306]:
+              - generic "32f2f383ce79f51e7faa7b18cee7a52cd194941c" [ref=e307]: 32f2f38
+            - gridcell "Alice Developer" [ref=e308]:
+              - generic "Alice Developer <alice@example.com>" [ref=e309]: Alice Developer
+            - gridcell "Line 21" [ref=e310]: "21"
+            - 'gridcell "export function add(a: number, b: number): number {" [ref=e311]':
+              - generic [ref=e312]: "export function add(a: number, b: number): number {"
+          - button "Line 22, commit 32f2f38 by Alice Developer, direct commit" [ref=e313] [cursor=pointer]:
+            - gridcell [ref=e314]:
+              - img [ref=e316]
+            - gridcell [ref=e318]
+            - gridcell [ref=e319]
+            - gridcell [ref=e320]:
+              - generic [ref=e321]: 32f2f38
+            - gridcell [ref=e322]:
+              - generic [ref=e323]: Alice Developer
+            - gridcell "Line 22" [ref=e324]: "22"
+            - gridcell "return a + b;" [ref=e325]:
+              - generic [ref=e326]: return a + b;
+          - button "Line 23, commit 32f2f38 by Alice Developer, direct commit" [ref=e327] [cursor=pointer]:
+            - gridcell [ref=e328]:
+              - img [ref=e330]
+            - gridcell [ref=e332]
+            - gridcell [ref=e333]
+            - gridcell [ref=e334]:
+              - generic [ref=e335]: 32f2f38
+            - gridcell [ref=e336]:
+              - generic [ref=e337]: Alice Developer
+            - gridcell "Line 23" [ref=e338]: "23"
+            - 'gridcell "}" [ref=e339]':
+              - generic [ref=e340]: "}"
+      - link "← Back to Home" [ref=e341] [cursor=pointer]:
+        - /url: /
+      - dialog [ref=e342]:
+        - generic [ref=e344]:
+          - heading [level=2] [ref=e345]: Commit Details
+          - button [ref=e346]:
+            - img [ref=e347]
+  - button "Open Next.js Dev Tools" [ref=e355] [cursor=pointer]:
+    - img [ref=e356]
+  - alert [ref=e359]
+```
