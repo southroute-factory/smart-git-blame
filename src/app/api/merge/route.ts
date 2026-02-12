@@ -35,6 +35,20 @@ interface ErrorResponse {
  *   - 400: Missing params, invalid repo, or invalid SHA format
  *   - 404: Commit not found
  *   - 500: Internal server error
+ *
+ * TASK-025/TASK-026: Direct Commit Handling
+ * When isDirectCommit is true, the response will NOT include mergeCommit
+ * or commitsInMerge fields. This indicates the commit was made directly
+ * to main/master branch, not introduced via a merge/PR.
+ *
+ * Expected response for direct commits:
+ * {
+ *   sha: "abc123",
+ *   isMergeCommit: false,
+ *   isDirectCommit: true
+ *   // mergeCommit: undefined (not present)
+ *   // commitsInMerge: undefined (not present)
+ * }
  */
 export async function GET(
   request: NextRequest

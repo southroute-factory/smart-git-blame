@@ -629,6 +629,15 @@ async function isMerge(repoPath: string, sha: string): Promise<boolean> {
  * Checks if a commit is reachable from HEAD via first-parent only
  * (i.e., it was committed directly to main, not via a merge).
  *
+ * TASK-025: Direct Commit Detection
+ * A commit is considered a "direct commit" if it appears in the first-parent
+ * chain from HEAD. This means it was committed directly to main/master,
+ * not brought in via a merge from a feature branch.
+ *
+ * First-parent traversal follows only merge commits' first parent, which
+ * represents the mainline history. Commits introduced via the second parent
+ * (merged branches) are excluded.
+ *
  * @param repoPath - Absolute path to the git repository
  * @param sha - Commit SHA to check
  * @returns Promise resolving to true if the commit is on the main line

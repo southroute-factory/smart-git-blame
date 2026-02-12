@@ -19,6 +19,34 @@ interface CommitDetails {
 }
 
 /**
+ * Formats a date as relative time (e.g., "3 days ago")
+ */
+function formatRelativeDate(dateStr: string): string {
+  try {
+    const date = new Date(dateStr);
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffSeconds = Math.floor(diffMs / 1000);
+    const diffMinutes = Math.floor(diffSeconds / 60);
+    const diffHours = Math.floor(diffMinutes / 60);
+    const diffDays = Math.floor(diffHours / 24);
+    const diffWeeks = Math.floor(diffDays / 7);
+    const diffMonths = Math.floor(diffDays / 30);
+    const diffYears = Math.floor(diffDays / 365);
+
+    if (diffSeconds < 60) return 'just now';
+    if (diffMinutes < 60) return `${diffMinutes} minute${diffMinutes === 1 ? '' : 's'} ago`;
+    if (diffHours < 24) return `${diffHours} hour${diffHours === 1 ? '' : 's'} ago`;
+    if (diffDays < 7) return `${diffDays} day${diffDays === 1 ? '' : 's'} ago`;
+    if (diffWeeks < 4) return `${diffWeeks} week${diffWeeks === 1 ? '' : 's'} ago`;
+    if (diffMonths < 12) return `${diffMonths} month${diffMonths === 1 ? '' : 's'} ago`;
+    return `${diffYears} year${diffYears === 1 ? '' : 's'} ago`;
+  } catch {
+    return dateStr;
+  }
+}
+
+/**
  * Props for the ChangePanel component
  */
 export interface ChangePanelProps {
@@ -103,10 +131,69 @@ function formatDate(dateStr: string): string {
 }
 
 /**
- * Shortens a SHA to the first 7 characters
+ * CopyButton component for copying text to clipboard
  */
-function shortenSha(sha: string): string {
-  return sha.slice(0, 7);
+function CopyButton({ text, label }: { text: string; label: string }) {
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      // Fallback for older browsers
+      const textArea = document.createElement('textarea');
+      textArea.value = text;
+      document.body.appendChild(textArea);
+      textArea.select();
+      document.execCommand('copy');
+      document.body.removeChild(textArea);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
+  };
+
+  return (
+    <button
+      onClick={handleCopy}
+      aria-label={copied ? 'Copied!' : label}
+      title={copied ? 'Copied!' : label}
+      className="ml-2 rounded p-1 text-zinc-400 transition-colors hover:bg-zinc-200 hover:text-zinc-600 dark:hover:bg-zinc-700 dark:hover:text-zinc-300"
+    >
+      {copied ? (
+        <svg
+          className="h-4 w-4 text-green-500"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+          aria-hidden="true"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M5 13l4 4L19 7"
+          />
+        </svg>
+      ) : (
+        <svg
+          className="h-4 w-4"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+          aria-hidden="true"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
+          />
+        </svg>
+      )}
+    </button>
+  );
 }
 
 /**
@@ -259,17 +346,20 @@ export default function ChangePanel({
 
             {!isLoading && !error && commitDetails && (
               <div className="space-y-6">
-                {/* SHA */}
+                {/* SHA - Full, copyable */}
                 <div>
                   <h3 className="mb-1 text-xs font-medium uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
                     Commit SHA
                   </h3>
-                  <p
-                    className="inline-block rounded bg-zinc-100 px-2 py-1 font-mono text-sm text-zinc-800 dark:bg-zinc-800 dark:text-zinc-200"
-                    title={commitDetails.sha}
-                  >
-                    {shortenSha(commitDetails.sha)}
-                  </p>
+                  <div className="flex items-center">
+                    <code
+                      className="inline-block break-all rounded bg-zinc-100 px-2 py-1 font-mono text-sm text-zinc-800 dark:bg-zinc-800 dark:text-zinc-200"
+                      title="Full commit SHA"
+                    >
+                      {commitDetails.sha}
+                    </code>
+                    <CopyButton text={commitDetails.sha} label="Copy SHA" />
+                  </div>
                 </div>
 
                 {/* Author */}
@@ -285,12 +375,15 @@ export default function ChangePanel({
                   </p>
                 </div>
 
-                {/* Date */}
+                {/* Date - Relative + absolute */}
                 <div>
                   <h3 className="mb-1 text-xs font-medium uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
                     Date
                   </h3>
                   <p className="text-sm text-zinc-800 dark:text-zinc-200">
+                    {formatRelativeDate(commitDetails.date)}
+                  </p>
+                  <p className="text-xs text-zinc-500 dark:text-zinc-400">
                     {formatDate(commitDetails.date)}
                   </p>
                 </div>
