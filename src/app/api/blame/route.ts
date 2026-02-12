@@ -1,5 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { execGitBlame, GitBlameResult, GitError } from "@/lib/git";
+import {
+  validateBlameParams,
+  validateRepoExists,
+  ValidationError,
+  RepoValidationError,
+} from "@/lib/validation";
 
 interface ErrorResponse {
   error: string;
@@ -9,18 +15,42 @@ export async function GET(
   request: NextRequest
 ): Promise<NextResponse<GitBlameResult | ErrorResponse>> {
   const searchParams = request.nextUrl.searchParams;
-  const repo = searchParams.get("repo");
-  const file = searchParams.get("file");
 
-  // Validate required query parameters
-  if (!repo || !file) {
-    const missingParams: string[] = [];
-    if (!repo) missingParams.push("repo");
-    if (!file) missingParams.push("file");
+  // Validate query parameters with Zod
+  let repo: string;
+  let file: string;
 
+  try {
+    const params = validateBlameParams(searchParams);
+    repo = params.repo;
+    file = params.file;
+  } catch (error) {
+    if (error instanceof ValidationError) {
+      return NextResponse.json(
+        { error: error.message },
+        { status: 400 }
+      );
+    }
     return NextResponse.json(
-      { error: `Missing required query parameters: ${missingParams.join(", ")}` },
+      { error: "Invalid request parameters" },
       { status: 400 }
+    );
+  }
+
+  // Validate repository exists and is a git repo
+  try {
+    await validateRepoExists(repo);
+  } catch (error) {
+    if (error instanceof RepoValidationError) {
+      const status = error.code === "NOT_FOUND" ? 404 : 400;
+      return NextResponse.json(
+        { error: error.message },
+        { status }
+      );
+    }
+    return NextResponse.json(
+      { error: "Repository validation failed" },
+      { status: 500 }
     );
   }
 

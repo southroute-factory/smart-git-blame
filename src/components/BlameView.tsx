@@ -47,19 +47,85 @@ export interface BlameViewProps {
 
 /**
  * Loading skeleton for the blame view
+ * Matches the layout of the actual BlameView table with pulsing placeholder rows
  */
-function BlameViewSkeleton() {
+export function BlameViewSkeleton({ rows = 15 }: { rows?: number }) {
   return (
-    <div className="w-full animate-pulse">
-      {Array.from({ length: 10 }).map((_, i) => (
-        <div
-          key={i}
-          className="flex h-6 border-b border-zinc-200 dark:border-zinc-800"
-        >
-          <div className="w-32 bg-zinc-100 dark:bg-zinc-900" />
-          <div className="flex-1 bg-zinc-50 dark:bg-zinc-950" />
-        </div>
-      ))}
+    <div className="w-full overflow-x-auto rounded-lg border border-zinc-200 dark:border-zinc-800">
+      <table
+        className="w-full border-collapse font-mono text-sm"
+        role="grid"
+        aria-label="Loading blame view"
+        aria-busy="true"
+      >
+        <thead className="sr-only">
+          <tr>
+            <th scope="col">Type</th>
+            <th scope="col">Commit</th>
+            <th scope="col">Author</th>
+            <th scope="col">Line</th>
+            <th scope="col">Code</th>
+          </tr>
+        </thead>
+        <tbody>
+          {Array.from({ length: rows }).map((_, i) => {
+            // Simulate visual grouping - show gutter info every 3-5 lines
+            const isGroupStart = i === 0 || i % 4 === 0;
+            const isEvenGroup = Math.floor(i / 4) % 2 === 0;
+            // Vary code line widths for realistic appearance
+            const codeWidth = [60, 75, 45, 90, 55, 80, 40, 70, 85, 50][i % 10];
+
+            return (
+              <tr
+                key={i}
+                className={`
+                  animate-pulse
+                  ${isEvenGroup ? 'bg-zinc-50 dark:bg-zinc-900/50' : 'bg-white dark:bg-zinc-950'}
+                  ${isGroupStart ? 'border-t border-zinc-200 dark:border-zinc-700' : ''}
+                `}
+              >
+                {/* Direct commit indicator skeleton */}
+                <td className="w-6 border-r border-zinc-200 px-1 py-0.5 dark:border-zinc-800">
+                  {isGroupStart && (
+                    <div className="mx-auto h-3.5 w-3.5 rounded-full bg-zinc-200 dark:bg-zinc-700" />
+                  )}
+                </td>
+
+                {/* SHA skeleton */}
+                <td className="whitespace-nowrap border-r border-zinc-200 px-2 py-0.5 dark:border-zinc-800">
+                  {isGroupStart ? (
+                    <div className="h-3 w-14 rounded bg-zinc-200 dark:bg-zinc-700" />
+                  ) : (
+                    <div className="h-3 w-14" />
+                  )}
+                </td>
+
+                {/* Author skeleton */}
+                <td className="whitespace-nowrap border-r border-zinc-200 px-2 py-0.5 dark:border-zinc-800">
+                  {isGroupStart ? (
+                    <div className="h-3 w-20 rounded bg-zinc-200 dark:bg-zinc-700" />
+                  ) : (
+                    <div className="h-3 w-20" />
+                  )}
+                </td>
+
+                {/* Line number skeleton */}
+                <td className="whitespace-nowrap border-r border-zinc-200 px-3 py-0.5 text-right dark:border-zinc-800">
+                  <div className="ml-auto h-3 w-6 rounded bg-zinc-100 dark:bg-zinc-800" />
+                </td>
+
+                {/* Code content skeleton */}
+                <td className="px-4 py-0.5">
+                  <div
+                    className="h-3 rounded bg-zinc-100 dark:bg-zinc-800"
+                    style={{ width: `${codeWidth}%` }}
+                  />
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
     </div>
   );
 }
