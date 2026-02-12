@@ -3,6 +3,8 @@
 **Submitted by:** Product Owner
 **Date:** 2026-02-12
 **Type:** feature
+**Status:** ✅ Reviewed (2026-02-12)
+**Decision:** Accept as STORY-013 (Sprint 4, pending security review)
 
 ## Description
 Replace or augment the manual path entry with a file browser UI for selecting repository and file paths.

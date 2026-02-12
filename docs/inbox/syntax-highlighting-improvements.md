@@ -3,6 +3,8 @@
 **Submitted by:** Product Owner
 **Date:** 2026-02-12
 **Type:** feature
+**Status:** ✅ Reviewed (2026-02-12)
+**Decision:** Accept to backlog (low priority, deferred to Sprint 4+)
 
 ## Description
 Review and potentially enhance the syntax highlighting implementation in the blame view.
