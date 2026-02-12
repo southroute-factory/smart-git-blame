@@ -8,17 +8,26 @@ import {
   RepoValidationError,
   FileValidationError,
 } from "@/lib/validation";
+import {
+  analyzeCrossFileOrigins,
+  CrossFileAnalysis,
+  getCachedCrossFileAnalysis,
+  cacheCrossFileAnalysis,
+} from "@/lib/crossfile";
 
 /**
- * Extended GitBlameResult with rename detection and uncommitted status.
+ * Extended GitBlameResult with rename detection, uncommitted status, and cross-file analysis.
  * TASK-052: Add rename detection to blame response
  * TASK-072: Add uncommitted changes status to blame response
+ * TASK-080: Add crossfile analysis to blame response
  */
 interface GitBlameResultWithRename extends GitBlameResult {
   /** Previous filename if the file was renamed, undefined otherwise */
   previousFilename?: string;
   /** Uncommitted changes status for the file (TASK-072) */
   uncommittedChanges?: UncommittedChangesResult;
+  /** Cross-file analysis showing code origins from other files (TASK-080) */
+  crossFileAnalysis?: CrossFileAnalysis;
 }
 
 /**
@@ -109,10 +118,19 @@ export async function GET(
     // TASK-072: Add uncommitted changes status to blame response
     const uncommittedChanges = await hasUncommittedChanges(repo, file);
 
+    // TASK-080: Add cross-file analysis to blame response
+    // TASK-082: Use caching for cross-file results
+    let crossFileAnalysis = getCachedCrossFileAnalysis(repo, file);
+    if (!crossFileAnalysis) {
+      crossFileAnalysis = analyzeCrossFileOrigins(result.lines, file);
+      cacheCrossFileAnalysis(repo, file, crossFileAnalysis);
+    }
+
     const response: GitBlameResultWithRename = {
       ...result,
       ...(previousFilename && { previousFilename }),
       uncommittedChanges,
+      crossFileAnalysis,
     };
 
     return NextResponse.json(response, { status: 200 });

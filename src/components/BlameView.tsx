@@ -4,6 +4,8 @@ import { useEffect, useState, useCallback, useMemo } from 'react';
 import { highlightCode, type HighlightResult } from '@/lib/highlighter';
 import { ProgressBar } from '@/components/ProgressIndicator';
 import { Tooltip } from '@/components/Tooltip';
+import { CrossFileIndicatorCompact } from '@/components/CrossFileIndicator';
+import { analyzeCrossFileOrigins, type CrossFileAnalysis, type CrossFileMatch } from '@/lib/crossfile';
 
 /**
  * Line movement information when a line was moved within the file
@@ -29,6 +31,8 @@ export interface BlameLine {
   timestamp: number;
   /** Movement information if line was moved */
   movement?: LineMovement;
+  /** Source file if code was copied/moved from another file (TASK-077) */
+  sourceFile?: string;
 }
 
 /**
@@ -73,6 +77,8 @@ export interface BlameViewProps {
   onLineClick?: (line: BlameLine) => void;
   /** Optional callback when previous filename is detected, passes the filename */
   onPreviousFilename?: (filename: string) => void;
+  /** Optional callback when user wants to view original file (TASK-085) */
+  onViewOriginalFile?: (sourceFile: string, lineNumber?: number) => void;
 }
 
 /**
@@ -93,6 +99,7 @@ export function BlameViewSkeleton({ rows = 15 }: { rows?: number }) {
           <tr>
             <th scope="col">Type</th>
             <th scope="col">Movement</th>
+            <th scope="col">Cross-file</th>
             <th scope="col">Commit</th>
             <th scope="col">Author</th>
             <th scope="col">Line</th>
@@ -128,6 +135,14 @@ export function BlameViewSkeleton({ rows = 15 }: { rows?: number }) {
                   {/* Only show movement placeholder occasionally for realistic appearance */}
                   {i % 7 === 2 && (
                     <div className="mx-auto h-3 w-6 rounded bg-zinc-200 dark:bg-zinc-700" />
+                  )}
+                </td>
+
+                {/* Cross-file indicator skeleton (TASK-083) */}
+                <td className="w-8 border-r border-zinc-200 px-1 py-0.5 dark:border-zinc-800">
+                  {/* Only show cross-file placeholder occasionally */}
+                  {i % 9 === 3 && (
+                    <div className="mx-auto h-3 w-4 rounded bg-zinc-200 dark:bg-zinc-700" />
                   )}
                 </td>
 
@@ -555,7 +570,7 @@ function LineMovementIndicator({ movement, onNavigateToOriginal }: LineMovementI
  * - Visual grouping for consecutive lines from the same commit
  * - Clickable lines for interaction
  */
-export default function BlameView({ repo, file, onLineClick, onPreviousFilename }: BlameViewProps) {
+export default function BlameView({ repo, file, onLineClick, onPreviousFilename, onViewOriginalFile }: BlameViewProps) {
   const [blameData, setBlameData] = useState<BlameResponse | null>(null);
   const [highlightResult, setHighlightResult] = useState<HighlightResult | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -569,6 +584,8 @@ export default function BlameView({ repo, file, onLineClick, onPreviousFilename 
   const [loadingStage, setLoadingStage] = useState<string>('');
   // Track dismissed uncommitted warning (TASK-073)
   const [warningDismissed, setWarningDismissed] = useState(false);
+  // Cross-file analysis results (TASK-083, TASK-084, TASK-085)
+  const [crossFileAnalysis, setCrossFileAnalysis] = useState<CrossFileAnalysis | null>(null);
 
   // Fetch blame data from API
   useEffect(() => {
@@ -614,6 +631,12 @@ export default function BlameView({ repo, file, onLineClick, onPreviousFilename 
         const code = data.lines.map((line) => line.content).join('\n');
         const highlighted = await highlightCode(code, { filename: file });
         setHighlightResult(highlighted);
+
+        // TASK-083, TASK-084, TASK-085: Analyze cross-file origins
+        setLoadingProgress(55);
+        setLoadingStage('Analyzing cross-file origins...');
+        const analysis = analyzeCrossFileOrigins(data.lines, file);
+        setCrossFileAnalysis(analysis);
 
         // Fetch merge context for unique commits to identify direct commits
         setLoadingProgress(70);
@@ -700,6 +723,19 @@ export default function BlameView({ repo, file, onLineClick, onPreviousFilename 
     return info;
   }, [blameData]);
 
+  // TASK-083, TASK-084, TASK-085: Map line numbers to cross-file matches
+  const lineToCrossFileMatch = useMemo(() => {
+    const map = new Map<number, CrossFileMatch>();
+    if (!crossFileAnalysis) return map;
+
+    for (const match of crossFileAnalysis.matches) {
+      for (const lineNumber of match.lineNumbers) {
+        map.set(lineNumber, match);
+      }
+    }
+    return map;
+  }, [crossFileAnalysis]);
+
   if (isLoading) {
     return (
       <div className="flex flex-col gap-3">
@@ -747,6 +783,7 @@ export default function BlameView({ repo, file, onLineClick, onPreviousFilename 
           <tr>
             <th scope="col">Type</th>
             <th scope="col">Movement</th>
+            <th scope="col">Cross-file origin</th>
             <th scope="col">Commit</th>
             <th scope="col">Author</th>
             <th scope="col">Line</th>
@@ -760,6 +797,8 @@ export default function BlameView({ repo, file, onLineClick, onPreviousFilename 
             const isGroupStart = groupInfo?.isGroupStart ?? false;
             const highlightedLine = highlightResult.lines[index];
             const isDirectCommit = directCommits.has(line.sha);
+            // TASK-083: Get cross-file match for this line
+            const crossFileMatch = lineToCrossFileMatch.get(line.lineNumber);
 
             return (
               <tr
@@ -773,7 +812,7 @@ export default function BlameView({ repo, file, onLineClick, onPreviousFilename 
                 }}
                 tabIndex={onLineClick ? 0 : undefined}
                 role={onLineClick ? 'button' : undefined}
-                aria-label={onLineClick ? `Line ${line.lineNumber}, commit ${shortenSha(line.sha)} by ${line.author}${isDirectCommit ? ', direct commit' : ''}${line.movement ? `, moved from line ${line.movement.movedFrom}` : ''}` : undefined}
+                aria-label={onLineClick ? `Line ${line.lineNumber}, commit ${shortenSha(line.sha)} by ${line.author}${isDirectCommit ? ', direct commit' : ''}${line.movement ? `, moved from line ${line.movement.movedFrom}` : ''}${crossFileMatch ? `, ${crossFileMatch.operationType} from ${crossFileMatch.sourceFile}` : ''}` : undefined}
                 className={`
                   group
                   ${isEvenGroup ? 'bg-zinc-50 dark:bg-zinc-900/50' : 'bg-white dark:bg-zinc-950'}
@@ -839,6 +878,16 @@ export default function BlameView({ repo, file, onLineClick, onPreviousFilename 
                 {/* Line movement indicator */}
                 <td className="w-10 border-r border-zinc-200 px-1 py-0.5 text-center dark:border-zinc-800">
                   <LineMovementIndicator movement={line.movement} />
+                </td>
+
+                {/* Cross-file origin indicator (TASK-083, TASK-084, TASK-085) */}
+                <td className="w-8 border-r border-zinc-200 px-1 py-0.5 text-center dark:border-zinc-800">
+                  {crossFileMatch && (
+                    <CrossFileIndicatorCompact
+                      match={crossFileMatch}
+                      onViewOriginal={onViewOriginalFile}
+                    />
+                  )}
                 </td>
 
                 {/* Blame gutter: SHA */}

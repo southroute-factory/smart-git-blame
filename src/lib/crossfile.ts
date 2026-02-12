@@ -11,6 +11,122 @@
 import { BlameLine } from "./git";
 
 /**
+ * Cache entry with expiration timestamp
+ */
+interface CacheEntry<T> {
+  data: T;
+  expiresAt: number;
+}
+
+/**
+ * Simple in-memory cache with TTL support
+ * TASK-082: Cache crossfile results
+ */
+class MemoryCache<T> {
+  private cache = new Map<string, CacheEntry<T>>();
+  private readonly ttlMs: number;
+
+  constructor(ttlMinutes: number = 5) {
+    this.ttlMs = ttlMinutes * 60 * 1000;
+  }
+
+  /**
+   * Get a value from the cache if it exists and hasn't expired
+   */
+  get(key: string): T | undefined {
+    const entry = this.cache.get(key);
+    if (!entry) {
+      return undefined;
+    }
+
+    if (Date.now() > entry.expiresAt) {
+      this.cache.delete(key);
+      return undefined;
+    }
+
+    return entry.data;
+  }
+
+  /**
+   * Set a value in the cache with TTL
+   */
+  set(key: string, data: T): void {
+    this.cache.set(key, {
+      data,
+      expiresAt: Date.now() + this.ttlMs,
+    });
+  }
+
+  /**
+   * Check if a key exists and hasn't expired
+   */
+  has(key: string): boolean {
+    return this.get(key) !== undefined;
+  }
+
+  /**
+   * Delete a key from the cache
+   */
+  delete(key: string): boolean {
+    return this.cache.delete(key);
+  }
+
+  /**
+   * Clear all entries from the cache
+   */
+  clear(): void {
+    this.cache.clear();
+  }
+
+  /**
+   * Get cache size (including potentially expired entries)
+   */
+  get size(): number {
+    return this.cache.size;
+  }
+}
+
+/**
+ * Cache for cross-file analysis results (5 minute TTL)
+ * TASK-082: Cache crossfile results
+ */
+const crossFileAnalysisCache = new MemoryCache<CrossFileAnalysis>(5);
+
+/**
+ * Build cache key for cross-file analysis
+ * TASK-082: Cache crossfile results
+ */
+export function buildCrossFileCacheKey(repo: string, file: string): string {
+  return `crossfile:${repo}:${file}`;
+}
+
+/**
+ * Get cached cross-file analysis if available
+ * TASK-082: Cache crossfile results
+ */
+export function getCachedCrossFileAnalysis(repo: string, file: string): CrossFileAnalysis | undefined {
+  const key = buildCrossFileCacheKey(repo, file);
+  return crossFileAnalysisCache.get(key);
+}
+
+/**
+ * Cache cross-file analysis result
+ * TASK-082: Cache crossfile results
+ */
+export function cacheCrossFileAnalysis(repo: string, file: string, analysis: CrossFileAnalysis): void {
+  const key = buildCrossFileCacheKey(repo, file);
+  crossFileAnalysisCache.set(key, analysis);
+}
+
+/**
+ * Clear the cross-file analysis cache
+ * TASK-082: Cache crossfile results
+ */
+export function clearCrossFileAnalysisCache(): void {
+  crossFileAnalysisCache.clear();
+}
+
+/**
  * Confidence levels for cross-file detection
  * TASK-079: Add confidence scoring
  */
