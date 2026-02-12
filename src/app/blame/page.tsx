@@ -4,6 +4,7 @@ import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { Suspense, useCallback, useState } from 'react';
 import BlameView, { type BlameLine } from '@/components/BlameView';
+import ChangePanel from '@/components/ChangePanel';
 
 /**
  * Format a timestamp to a readable date string
@@ -104,15 +105,22 @@ function BlameContent() {
   const repo = searchParams.get('repo');
   const file = searchParams.get('file');
   const [selectedLine, setSelectedLine] = useState<BlameLine | null>(null);
+  const [isPanelOpen, setIsPanelOpen] = useState(false);
 
-  // Handler for line clicks - shows selected line info
+  // Handler for line clicks - shows selected line info and opens ChangePanel
   const handleLineClick = useCallback((line: BlameLine) => {
     setSelectedLine(line);
+    setIsPanelOpen(true);
   }, []);
 
   // Handler to close the selected line panel
   const handleClosePanel = useCallback(() => {
     setSelectedLine(null);
+  }, []);
+
+  // Handler to close the ChangePanel drawer
+  const handleCloseChangePanel = useCallback(() => {
+    setIsPanelOpen(false);
   }, []);
 
   if (!repo || !file) {
@@ -164,6 +172,14 @@ function BlameContent() {
       >
         ← Back to Home
       </Link>
+
+      {/* ChangePanel slide-out drawer for commit details */}
+      <ChangePanel
+        isOpen={isPanelOpen}
+        onClose={handleCloseChangePanel}
+        commitSha={selectedLine?.sha ?? null}
+        repo={repo}
+      />
     </div>
   );
 }

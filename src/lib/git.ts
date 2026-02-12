@@ -4,6 +4,116 @@ import { promisify } from "util";
 const execAsync = promisify(exec);
 
 /**
+ * Cache entry with expiration timestamp
+ */
+interface CacheEntry<T> {
+  data: T;
+  expiresAt: number;
+}
+
+/**
+ * Simple in-memory cache with TTL support
+ */
+class MemoryCache<T> {
+  private cache = new Map<string, CacheEntry<T>>();
+  private readonly ttlMs: number;
+
+  constructor(ttlMinutes: number = 5) {
+    this.ttlMs = ttlMinutes * 60 * 1000;
+  }
+
+  /**
+   * Get a value from the cache if it exists and hasn't expired
+   */
+  get(key: string): T | undefined {
+    const entry = this.cache.get(key);
+    if (!entry) {
+      return undefined;
+    }
+
+    if (Date.now() > entry.expiresAt) {
+      this.cache.delete(key);
+      return undefined;
+    }
+
+    return entry.data;
+  }
+
+  /**
+   * Set a value in the cache with TTL
+   */
+  set(key: string, data: T): void {
+    this.cache.set(key, {
+      data,
+      expiresAt: Date.now() + this.ttlMs,
+    });
+  }
+
+  /**
+   * Check if a key exists and hasn't expired
+   */
+  has(key: string): boolean {
+    return this.get(key) !== undefined;
+  }
+
+  /**
+   * Delete a key from the cache
+   */
+  delete(key: string): boolean {
+    return this.cache.delete(key);
+  }
+
+  /**
+   * Clear all entries from the cache
+   */
+  clear(): void {
+    this.cache.clear();
+  }
+
+  /**
+   * Get cache size (including potentially expired entries)
+   */
+  get size(): number {
+    return this.cache.size;
+  }
+}
+
+/**
+ * Cache for merge context lookups (5 minute TTL)
+ */
+const mergeContextCache = new MemoryCache<MergeContext>(5);
+
+/**
+ * Build cache key for merge context
+ */
+export function buildMergeContextCacheKey(repo: string, sha: string): string {
+  return `${repo}:${sha}`;
+}
+
+/**
+ * Get cached merge context if available
+ */
+export function getCachedMergeContext(repo: string, sha: string): MergeContext | undefined {
+  const key = buildMergeContextCacheKey(repo, sha);
+  return mergeContextCache.get(key);
+}
+
+/**
+ * Cache merge context result
+ */
+export function cacheMergeContext(repo: string, sha: string, context: MergeContext): void {
+  const key = buildMergeContextCacheKey(repo, sha);
+  mergeContextCache.set(key, context);
+}
+
+/**
+ * Clear the merge context cache
+ */
+export function clearMergeContextCache(): void {
+  mergeContextCache.clear();
+}
+
+/**
  * Represents a commit in a merge context
  */
 export interface MergeCommitInfo {
@@ -686,6 +796,12 @@ export async function getMergeContext(
 ): Promise<MergeContext> {
   validateGitInputs(repoPath, commitSha);
 
+  // Check cache first
+  const cached = getCachedMergeContext(repoPath, commitSha);
+  if (cached) {
+    return cached;
+  }
+
   try {
     // First, resolve the short SHA to full SHA
     const { stdout: fullShaOutput } = await execAsync(
@@ -700,53 +816,59 @@ export async function getMergeContext(
     // Check if this commit itself is a merge commit
     const commitIsMerge = await isMerge(repoPath, fullSha);
 
+    let result: MergeContext;
+
     if (commitIsMerge) {
       // The commit is itself a merge commit
       const mergeInfo = await getMergeCommitInfo(repoPath, fullSha);
       const commitsInMerge = await getCommitsInMerge(repoPath, fullSha);
 
-      return {
+      result = {
         isMergeCommit: true,
         isDirectCommit: false,
         mergeCommit: mergeInfo,
         commitsInMerge,
       };
+    } else {
+      // Check if the commit is directly on the main line
+      const onMainLine = await isOnMainLine(repoPath, fullSha);
+
+      if (onMainLine) {
+        // Commit was made directly to main
+        result = {
+          isMergeCommit: false,
+          isDirectCommit: true,
+        };
+      } else {
+        // Find merge commits that brought this commit to main
+        const mergeCommits = await findMergeCommits(repoPath, fullSha);
+
+        if (mergeCommits.length === 0) {
+          // No merge found - commit might be on a branch not yet merged
+          // or it could be an old commit where merge history is complex
+          result = {
+            isMergeCommit: false,
+            isDirectCommit: false,
+          };
+        } else {
+          // Use the most recent (first) merge commit
+          const mergeSha = mergeCommits[0];
+          const mergeInfo = await getMergeCommitInfo(repoPath, mergeSha);
+          const commitsInMerge = await getCommitsInMerge(repoPath, mergeSha);
+
+          result = {
+            isMergeCommit: false,
+            isDirectCommit: false,
+            mergeCommit: mergeInfo,
+            commitsInMerge,
+          };
+        }
+      }
     }
 
-    // Check if the commit is directly on the main line
-    const onMainLine = await isOnMainLine(repoPath, fullSha);
-
-    if (onMainLine) {
-      // Commit was made directly to main
-      return {
-        isMergeCommit: false,
-        isDirectCommit: true,
-      };
-    }
-
-    // Find merge commits that brought this commit to main
-    const mergeCommits = await findMergeCommits(repoPath, fullSha);
-
-    if (mergeCommits.length === 0) {
-      // No merge found - commit might be on a branch not yet merged
-      // or it could be an old commit where merge history is complex
-      return {
-        isMergeCommit: false,
-        isDirectCommit: false,
-      };
-    }
-
-    // Use the most recent (first) merge commit
-    const mergeSha = mergeCommits[0];
-    const mergeInfo = await getMergeCommitInfo(repoPath, mergeSha);
-    const commitsInMerge = await getCommitsInMerge(repoPath, mergeSha);
-
-    return {
-      isMergeCommit: false,
-      isDirectCommit: false,
-      mergeCommit: mergeInfo,
-      commitsInMerge,
-    };
+    // Cache the result before returning
+    cacheMergeContext(repoPath, commitSha, result);
+    return result;
   } catch (error) {
     if (error instanceof GitError) {
       throw error;
