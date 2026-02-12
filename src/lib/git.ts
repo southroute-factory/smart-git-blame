@@ -199,6 +199,8 @@ export interface BlameLine {
   originalLine?: number;
   /** If line was moved, the previous SHA where it originated (TASK-059) */
   previousSha?: string;
+  /** Original source file if code was copied/moved from another file (TASK-077) */
+  sourceFile?: string;
 }
 
 /**
@@ -252,10 +254,19 @@ export class GitError extends Error {
  * previous {prev-sha} {prev-filename}
  * ```
  *
+ * With -C -C -C flag for cross-file detection (TASK-077), when code was
+ * copied/moved from another file, the "filename" line shows the original file:
+ * ```
+ * {sha} {orig-line} {final-line}
+ * filename {original-filename}
+ * ```
+ * The filename will differ from the current file if code was copied/moved.
+ *
  * @param porcelainOutput - Raw output from git blame --porcelain
+ * @param currentFile - Optional: the current file being blamed, to detect cross-file copies
  * @returns Array of BlameLine objects
  */
-export function parseBlameOutput(porcelainOutput: string): BlameLine[] {
+export function parseBlameOutput(porcelainOutput: string, currentFile?: string): BlameLine[] {
   const lines: BlameLine[] = [];
   const outputLines = porcelainOutput.split("\n");
 
@@ -267,6 +278,7 @@ export function parseBlameOutput(porcelainOutput: string): BlameLine[] {
   let currentOriginalLine = 0;
   let currentPreviousSha: string | undefined;
   let currentPreviousOriginalLine: number | undefined;
+  let currentSourceFile: string | undefined; // TASK-077: Track source file for cross-file detection
 
   // Cache for commit metadata (sha -> metadata)
   // Git blame porcelain only outputs full commit info once per commit
@@ -293,6 +305,7 @@ export function parseBlameOutput(porcelainOutput: string): BlameLine[] {
       // Reset previous info for new line block
       currentPreviousSha = undefined;
       currentPreviousOriginalLine = undefined;
+      currentSourceFile = undefined; // TASK-077: Reset source file for new line block
 
       // Check if we have cached metadata for this commit
       const cached = commitCache.get(currentSha);
@@ -339,7 +352,15 @@ export function parseBlameOutput(porcelainOutput: string): BlameLine[] {
     }
 
     // When we hit the filename line, cache the commit metadata
+    // TASK-077: Also capture the source filename for cross-file detection
     if (line.startsWith("filename ")) {
+      const sourceFilename = line.slice(9); // "filename " is 9 chars
+      
+      // TASK-077: If currentFile is provided and differs from source, track it
+      if (currentFile && sourceFilename !== currentFile) {
+        currentSourceFile = sourceFilename;
+      }
+      
       if (!commitCache.has(currentSha)) {
         commitCache.set(currentSha, {
           author: currentAuthor,
@@ -367,6 +388,11 @@ export function parseBlameOutput(porcelainOutput: string): BlameLine[] {
       if (currentPreviousSha && currentPreviousOriginalLine !== undefined) {
         blameLine.originalLine = currentPreviousOriginalLine;
         blameLine.previousSha = currentPreviousSha;
+      }
+
+      // TASK-077: Add source file info if code was copied/moved from another file
+      if (currentSourceFile) {
+        blameLine.sourceFile = currentSourceFile;
       }
 
       lines.push(blameLine);
@@ -407,8 +433,12 @@ export async function execGitBlame(
 
   try {
     // TASK-057: Use -M flag to detect lines moved within file
+    // TASK-077: Use -C -C -C flags to detect code copied/moved from other files
+    // -C: Find copies from modified files in the same commit
+    // -C -C: Find copies from any file in the same commit
+    // -C -C -C: Find copies from any file in any commit
     const { stdout, stderr } = await execAsync(
-      `git blame -M --porcelain -- "${filePath}"`,
+      `git blame -M -C -C -C --porcelain -- "${filePath}"`,
       {
         cwd: repoPath,
         maxBuffer: 50 * 1024 * 1024, // 50MB buffer for large files
@@ -421,7 +451,8 @@ export async function execGitBlame(
       throw new GitError(`Git blame failed: ${stderr}`, 1, stderr);
     }
 
-    const lines = parseBlameOutput(stdout);
+    // TASK-077: Pass filePath to parseBlameOutput for cross-file detection
+    const lines = parseBlameOutput(stdout, filePath);
 
     return {
       lines,
