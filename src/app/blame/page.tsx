@@ -2,12 +2,23 @@
 
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { Suspense } from 'react';
+import { Suspense, useCallback } from 'react';
+import BlameView, { type BlameLine } from '@/components/BlameView';
 
 function BlameContent() {
   const searchParams = useSearchParams();
   const repo = searchParams.get('repo');
   const file = searchParams.get('file');
+
+  // Handler for line clicks - can be extended for future functionality
+  const handleLineClick = useCallback((line: BlameLine) => {
+    // Future: could open commit details, show diff, etc.
+    console.log('Line clicked:', {
+      lineNumber: line.lineNumber,
+      sha: line.sha,
+      author: line.author,
+    });
+  }, []);
 
   if (!repo || !file) {
     return (
@@ -29,7 +40,7 @@ function BlameContent() {
   }
 
   return (
-    <div className="flex w-full max-w-4xl flex-col gap-6">
+    <div className="flex w-full max-w-6xl flex-col gap-6">
       <div className="flex flex-col gap-2">
         <h1 className="text-2xl font-semibold text-black dark:text-zinc-50">
           Blame View
@@ -46,11 +57,7 @@ function BlameContent() {
         </div>
       </div>
 
-      <div className="rounded-lg border border-zinc-200 bg-zinc-50 p-8 text-center dark:border-zinc-800 dark:bg-zinc-900">
-        <p className="text-zinc-500 dark:text-zinc-400">
-          BlameView component will be rendered here
-        </p>
-      </div>
+      <BlameView repo={repo} file={file} onLineClick={handleLineClick} />
 
       <Link
         href="/"

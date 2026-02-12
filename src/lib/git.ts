@@ -4,6 +4,22 @@ import { promisify } from "util";
 const execAsync = promisify(exec);
 
 /**
+ * Represents commit details from git show
+ */
+export interface CommitDetails {
+  sha: string;
+  author: string;
+  authorEmail: string;
+  date: string;
+  message: string;
+  stats: {
+    filesChanged: number;
+    insertions: number;
+    deletions: number;
+  };
+}
+
+/**
  * Represents a single line from git blame output
  */
 export interface BlameLine {
@@ -227,6 +243,195 @@ export async function execGitBlame(
 
     throw new GitError(
       execError.message || "Git blame failed",
+      execError.code,
+      execError.stderr
+    );
+  }
+}
+
+/**
+ * Parses git show --stat output into structured CommitDetails.
+ *
+ * Expected output format:
+ * ```
+ * commit {sha}
+ * Author: {name} <{email}>
+ * Date:   {date}
+ *
+ *     {message line 1}
+ *     {message line 2}
+ *     ...
+ *
+ *  file1.txt | 10 +++---
+ *  file2.ts  | 25 +++++++++++++++++++-----
+ *  3 files changed, 20 insertions(+), 15 deletions(-)
+ * ```
+ *
+ * @param output - Raw output from git show --stat
+ * @returns CommitDetails object
+ */
+export function parseGitShow(output: string): CommitDetails {
+  const lines = output.split("\n");
+
+  let sha = "";
+  let author = "";
+  let authorEmail = "";
+  let date = "";
+  const messageLines: string[] = [];
+  let filesChanged = 0;
+  let insertions = 0;
+  let deletions = 0;
+
+  let parsingMessage = false;
+  let foundBlankAfterDate = false;
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+
+    // Parse commit SHA
+    if (line.startsWith("commit ")) {
+      sha = line.slice(7).trim();
+      continue;
+    }
+
+    // Parse Author line: "Author: Name <email@example.com>"
+    if (line.startsWith("Author: ")) {
+      const authorLine = line.slice(8);
+      const emailMatch = authorLine.match(/^(.+?)\s*<(.+)>$/);
+      if (emailMatch) {
+        author = emailMatch[1].trim();
+        authorEmail = emailMatch[2].trim();
+      } else {
+        author = authorLine.trim();
+      }
+      continue;
+    }
+
+    // Parse Date line: "Date:   Mon Jan 15 10:30:00 2024 -0500"
+    if (line.startsWith("Date:")) {
+      date = line.slice(5).trim();
+      continue;
+    }
+
+    // Blank line after Date starts the message section
+    if (!foundBlankAfterDate && line === "" && date !== "") {
+      foundBlankAfterDate = true;
+      parsingMessage = true;
+      continue;
+    }
+
+    // Parse message lines (indented with 4 spaces)
+    if (parsingMessage) {
+      // End of message: blank line or start of stats
+      if (line === "") {
+        parsingMessage = false;
+        continue;
+      }
+      // Message lines are indented
+      if (line.startsWith("    ")) {
+        messageLines.push(line.slice(4));
+        continue;
+      }
+      // Non-indented line means we've hit the stats section
+      parsingMessage = false;
+    }
+
+    // Parse stat summary line: "3 files changed, 20 insertions(+), 15 deletions(-)"
+    const statMatch = line.match(
+      /^\s*(\d+)\s+files?\s+changed(?:,\s+(\d+)\s+insertions?\(\+\))?(?:,\s+(\d+)\s+deletions?\(-\))?/
+    );
+    if (statMatch) {
+      filesChanged = parseInt(statMatch[1], 10);
+      insertions = statMatch[2] ? parseInt(statMatch[2], 10) : 0;
+      deletions = statMatch[3] ? parseInt(statMatch[3], 10) : 0;
+      continue;
+    }
+  }
+
+  return {
+    sha,
+    author,
+    authorEmail,
+    date,
+    message: messageLines.join("\n"),
+    stats: {
+      filesChanged,
+      insertions,
+      deletions,
+    },
+  };
+}
+
+/**
+ * Executes git show --stat on a commit and returns parsed results.
+ *
+ * @param repoPath - Absolute path to the git repository
+ * @param sha - Commit SHA to show
+ * @returns Promise resolving to CommitDetails
+ * @throws GitError if git command fails
+ */
+export async function execGitShow(
+  repoPath: string,
+  sha: string
+): Promise<CommitDetails> {
+  // Validate inputs to prevent command injection
+  if (!repoPath || typeof repoPath !== "string") {
+    throw new GitError("Invalid repository path");
+  }
+  if (!sha || typeof sha !== "string") {
+    throw new GitError("Invalid commit SHA");
+  }
+
+  // Sanitize paths - reject paths with dangerous characters
+  const dangerousChars = /[;&|`$(){}[\]<>\\'"!#*?~]/;
+  if (dangerousChars.test(repoPath)) {
+    throw new GitError("Invalid characters in repository path");
+  }
+
+  // Validate SHA format (allow short and full SHAs, alphanumeric only)
+  const shaPattern = /^[a-f0-9]{4,40}$/i;
+  if (!shaPattern.test(sha)) {
+    throw new GitError("Invalid commit SHA format");
+  }
+
+  try {
+    const { stdout, stderr } = await execAsync(
+      `git show --stat "${sha}"`,
+      {
+        cwd: repoPath,
+        maxBuffer: 10 * 1024 * 1024, // 10MB buffer
+        encoding: "utf-8",
+      }
+    );
+
+    // Git may output warnings to stderr even on success
+    if (stderr && !stdout) {
+      throw new GitError(`Git show failed: ${stderr}`, 1, stderr);
+    }
+
+    return parseGitShow(stdout);
+  } catch (error) {
+    if (error instanceof GitError) {
+      throw error;
+    }
+
+    // Handle exec errors
+    const execError = error as { code?: number; stderr?: string; message?: string };
+
+    if (execError.stderr?.includes("fatal: bad object")) {
+      throw new GitError(`Commit not found: ${sha}`, 128, execError.stderr);
+    }
+
+    if (execError.stderr?.includes("fatal: not a git repository")) {
+      throw new GitError(
+        `Not a git repository: ${repoPath}`,
+        128,
+        execError.stderr
+      );
+    }
+
+    throw new GitError(
+      execError.message || "Git show failed",
       execError.code,
       execError.stderr
     );
