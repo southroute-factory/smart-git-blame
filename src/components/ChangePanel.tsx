@@ -19,6 +19,30 @@ interface CommitDetails {
 }
 
 /**
+ * Commit info within a merge
+ */
+interface MergeCommitInfo {
+  sha: string;
+  message: string;
+  author: string;
+}
+
+/**
+ * Merge context from the API
+ */
+interface MergeContext {
+  sha: string;
+  isMergeCommit: boolean;
+  isDirectCommit: boolean;
+  mergeCommit?: {
+    sha: string;
+    message: string;
+    date: string;
+  };
+  commitsInMerge?: MergeCommitInfo[];
+}
+
+/**
  * Formats a date as relative time (e.g., "3 days ago")
  */
 function formatRelativeDate(dateStr: string): string {
@@ -214,12 +238,26 @@ export default function ChangePanel({
   repo,
 }: ChangePanelProps) {
   const [commitDetails, setCommitDetails] = useState<CommitDetails | null>(null);
+  const [mergeContext, setMergeContext] = useState<MergeContext | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [isMergeLoading, setIsMergeLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [mergeError, setMergeError] = useState<string | null>(null);
+  const [isMergeCommitsExpanded, setIsMergeCommitsExpanded] = useState(false);
+  // Track which SHA we've loaded to avoid redundant fetches and detect switching
+  const [loadedSha, setLoadedSha] = useState<string | null>(null);
 
-  // Fetch commit details when panel opens and SHA is provided
+  // Determine if we're switching to a different commit (show loading overlay)
+  const isSwitchingCommit = isOpen && commitSha && loadedSha && commitSha !== loadedSha && isLoading;
+
+  // Fetch commit details and merge context when panel opens and SHA is provided
   useEffect(() => {
     if (!isOpen || !commitSha) {
+      return;
+    }
+
+    // Skip fetch if we already have details for this exact commit
+    if (commitDetails && commitSha === loadedSha && !error) {
       return;
     }
 
@@ -238,15 +276,57 @@ export default function ChangePanel({
 
         const data: CommitDetails = await response.json();
         setCommitDetails(data);
+        setLoadedSha(commitSha);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'An unexpected error occurred');
+        setLoadedSha(null);
       } finally {
         setIsLoading(false);
       }
     };
 
+    const fetchMergeContext = async () => {
+      setIsMergeLoading(true);
+      setMergeError(null);
+      setIsMergeCommitsExpanded(false);
+
+      try {
+        const params = new URLSearchParams({ repo, sha: commitSha });
+        const response = await fetch(`/api/merge?${params.toString()}`);
+
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({}));
+          throw new Error(errorData.error || `Failed to fetch merge context: ${response.status}`);
+        }
+
+        const data: MergeContext = await response.json();
+        setMergeContext(data);
+      } catch (err) {
+        setMergeError(err instanceof Error ? err.message : 'Failed to load merge context');
+      } finally {
+        setIsMergeLoading(false);
+      }
+    };
+
     fetchCommitDetails();
-  }, [isOpen, commitSha, repo]);
+    fetchMergeContext();
+  }, [isOpen, commitSha, repo, loadedSha, commitDetails, error]);
+
+  // Reset state when panel closes to ensure fresh state on next open
+  useEffect(() => {
+    if (!isOpen) {
+      // Delay reset to allow close animation to complete
+      const timeout = setTimeout(() => {
+        setCommitDetails(null);
+        setLoadedSha(null);
+        setError(null);
+        setMergeContext(null);
+        setMergeError(null);
+        setIsMergeCommitsExpanded(false);
+      }, 300);
+      return () => clearTimeout(timeout);
+    }
+  }, [isOpen]);
 
   // Handle ESC key to close
   useEffect(() => {
@@ -339,12 +419,45 @@ export default function ChangePanel({
           </header>
 
           {/* Content */}
-          <div className="flex-1 overflow-y-auto px-6 py-6">
-            {isLoading && <ChangePanelSkeleton />}
+          <div className="relative flex-1 overflow-y-auto px-6 py-6">
+            {/* Loading overlay when switching commits (shows over existing content) */}
+            {isSwitchingCommit && (
+              <div
+                className="absolute inset-0 z-10 flex items-center justify-center bg-white/80 backdrop-blur-sm transition-opacity dark:bg-zinc-900/80"
+                aria-label="Loading new commit details"
+              >
+                <div className="flex flex-col items-center gap-2">
+                  <svg
+                    className="h-6 w-6 animate-spin text-zinc-500"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    aria-hidden="true"
+                  >
+                    <circle
+                      className="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                    />
+                    <path
+                      className="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                    />
+                  </svg>
+                  <span className="text-sm text-zinc-500 dark:text-zinc-400">Switching commit...</span>
+                </div>
+              </div>
+            )}
+
+            {/* Initial loading skeleton (no existing content) */}
+            {isLoading && !commitDetails && <ChangePanelSkeleton />}
 
             {error && <ChangePanelError message={error} />}
 
-            {!isLoading && !error && commitDetails && (
+            {!error && commitDetails && (
               <div className="space-y-6">
                 {/* SHA - Full, copyable */}
                 <div>
@@ -423,6 +536,131 @@ export default function ChangePanel({
                       </p>
                     </div>
                   </div>
+                </div>
+
+                {/* Merge Context */}
+                <div>
+                  <h3 className="mb-2 text-xs font-medium uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
+                    Merge Context
+                  </h3>
+                  {isMergeLoading && (
+                    <div className="animate-pulse space-y-2">
+                      <div className="h-4 w-32 rounded bg-zinc-200 dark:bg-zinc-700" />
+                      <div className="h-4 w-48 rounded bg-zinc-200 dark:bg-zinc-700" />
+                    </div>
+                  )}
+                  {mergeError && (
+                    <p className="text-sm text-red-600 dark:text-red-400">{mergeError}</p>
+                  )}
+                  {!isMergeLoading && !mergeError && mergeContext && (
+                    <div className="space-y-3">
+                      {mergeContext.isDirectCommit && (
+                        <div className="flex items-center gap-2">
+                          <span className="inline-flex items-center rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-medium text-blue-800 dark:bg-blue-900 dark:text-blue-200">
+                            <svg
+                              className="mr-1 h-3 w-3"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                              aria-hidden="true"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M13 10V3L4 14h7v7l9-11h-7z"
+                              />
+                            </svg>
+                            Direct commit
+                          </span>
+                        </div>
+                      )}
+                      {!mergeContext.isDirectCommit && mergeContext.mergeCommit && (
+                        <div className="rounded-lg border border-purple-200 bg-purple-50 p-3 dark:border-purple-800 dark:bg-purple-950">
+                          <div className="mb-2 flex items-center gap-2">
+                            <svg
+                              className="h-4 w-4 text-purple-600 dark:text-purple-400"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                              aria-hidden="true"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"
+                              />
+                            </svg>
+                            <span className="text-sm font-medium text-purple-800 dark:text-purple-200">
+                              Part of merge: {mergeContext.mergeCommit.sha.slice(0, 7)}
+                            </span>
+                            <CopyButton text={mergeContext.mergeCommit.sha} label="Copy merge SHA" />
+                          </div>
+                          <p className="text-sm text-purple-700 dark:text-purple-300">
+                            {mergeContext.mergeCommit.message.split('\n')[0]}
+                          </p>
+                        </div>
+                      )}
+                      {!mergeContext.isDirectCommit && mergeContext.commitsInMerge && mergeContext.commitsInMerge.length > 0 && (
+                        <div>
+                          <button
+                            onClick={() => setIsMergeCommitsExpanded(!isMergeCommitsExpanded)}
+                            className="flex w-full items-center justify-between rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2 text-left transition-colors hover:bg-zinc-100 dark:border-zinc-700 dark:bg-zinc-800 dark:hover:bg-zinc-750"
+                            aria-expanded={isMergeCommitsExpanded}
+                            aria-controls="merge-commits-list"
+                          >
+                            <span className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
+                              Commits in merge ({mergeContext.commitsInMerge.length})
+                            </span>
+                            <svg
+                              className={`h-4 w-4 text-zinc-500 transition-transform dark:text-zinc-400 ${
+                                isMergeCommitsExpanded ? 'rotate-180' : ''
+                              }`}
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                              aria-hidden="true"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M19 9l-7 7-7-7"
+                              />
+                            </svg>
+                          </button>
+                          {isMergeCommitsExpanded && (
+                            <ul
+                              id="merge-commits-list"
+                              className="mt-2 space-y-2"
+                              role="list"
+                              aria-label="Commits included in merge"
+                            >
+                              {mergeContext.commitsInMerge.map((commit) => (
+                                <li
+                                  key={commit.sha}
+                                  className="rounded-lg border border-zinc-200 bg-white p-3 dark:border-zinc-700 dark:bg-zinc-800"
+                                >
+                                  <div className="flex items-center gap-2">
+                                    <code className="rounded bg-zinc-100 px-1.5 py-0.5 font-mono text-xs text-zinc-600 dark:bg-zinc-700 dark:text-zinc-300">
+                                      {commit.sha.slice(0, 7)}
+                                    </code>
+                                    <span className="text-xs text-zinc-500 dark:text-zinc-400">
+                                      by {commit.author}
+                                    </span>
+                                  </div>
+                                  <p className="mt-1 truncate text-sm text-zinc-700 dark:text-zinc-300">
+                                    {commit.message.split('\n')[0]}
+                                  </p>
+                                </li>
+                              ))}
+                            </ul>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
               </div>
             )}
