@@ -12,6 +12,8 @@ RUN npm ci
 # Copy source code
 COPY . .
 RUN rm -rf .git
+ARG BASE_PATH=""
+ENV BASE_PATH=${BASE_PATH}
 
 # Build the application
 RUN npm run build
@@ -22,7 +24,9 @@ FROM node:20-alpine AS runner
 WORKDIR /app
 
 ENV NODE_ENV=production
-ENV BASE_PATH=/
+# BASE_PATH can be overridden at runtime via docker run -e BASE_PATH=/smart-git-blame
+# or in docker-compose.yml / Kubernetes manifests
+# Default is empty string for root path deployment
 
 # Install tini for proper signal handling
 RUN apk add --no-cache tini git
@@ -46,6 +50,8 @@ EXPOSE 3000
 
 ENV PORT=3000
 ENV HOSTNAME="0.0.0.0"
+ARG BASE_PATH=""
+ENV BASE_PATH=${BASE_PATH}
 
 # Use tini as entrypoint for proper signal handling
 ENTRYPOINT ["/sbin/tini", "--"]
