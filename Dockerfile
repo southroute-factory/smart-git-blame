@@ -22,6 +22,7 @@ FROM node:20-alpine AS runner
 WORKDIR /app
 
 ENV NODE_ENV=production
+ENV BASE_PATH=/
 
 # Install tini for proper signal handling
 RUN apk add --no-cache tini git
